@@ -2,6 +2,17 @@
 
 import xml.etree.ElementTree as ET
 
+def quote(text):
+    """encode html entities"""
+    text = unicode(text)
+    return text.translate({
+        ord('&'): u'&amp;',
+        ord('<'): u'&lt;',
+        ord('"'): u'&quot;',
+        ord('>'): u'&gt;',
+        ord('@'): u'&#64;',
+        0xa0: u'&nbsp;'})
+
 class TagBase(ET.Element):
     "base class for all tags"
 
@@ -37,7 +48,7 @@ class TagBase(ET.Element):
                 if isinstance(child, TagBase):
                     return child.format(level + 1, increment)
                 else:
-                    return indent + one_indent + str(child)
+                    return indent + one_indent + quote(str(child))
 
             childs = "\n".join([format_child(child)
                 for child in list(self)])
