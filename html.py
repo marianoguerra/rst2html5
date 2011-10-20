@@ -3,42 +3,52 @@
 import xml.etree.ElementTree as ET
 
 class TagBase(ET.Element):
+    "base class for all tags"
+
+    SELF_CLOSING = False
+
     def __init__(self, childs, attrs):
+        "add childs and call parent constructor"
         ET.Element.__init__(self, self.__class__.__name__.lower(), attrs)
 
         for child in childs:
             self.append(child)
 
-    def format(self, level=0):
-        indent = " " * level
+    def format(self, level=0, increment=1):
+        "pretty print the object"
+        one_indent = " " * increment
+        indent = one_indent * level
+        attrs = " ".join(['%s="%s"' % (name, val)
+            for (name, val) in self.attrib.iteritems()])
 
         if self.__class__.SELF_CLOSING:
             return "%s<%s%s />" % (indent, self.tag, attrs)
         else:
-            attrs = " ".join(['%s="%s"' % (name, val) for (name, val) in self.attrib.iteritems()])
 
-            nl = "\n" + indent
+            new_line = "\n" + indent
 
             if attrs:
                 attrs = " " + attrs
 
             def format_child(child):
+                """transform childs to string representations"""
                 if isinstance(child, TagBase):
-                    return child.format(level + 1)
+                    return child.format(level + increment)
                 else:
-                    return indent + " " + str(child)
+                    return indent + one_indent + str(child)
 
-            childs = nl.join([format_child(child) for child in list(self)])
+            childs = new_line.join([format_child(child)
+                for child in list(self)])
 
             if childs:
-                childs = nl + childs + nl
+                childs = new_line + childs + "\n"
 
-            return "%s<%s%s>%s</%s>" % (indent, self.tag, attrs, childs, self.tag)
+            return "%s<%s%s>%s%s</%s>" % (indent, self.tag, attrs, childs,
+                    indent, self.tag)
 
     def __str__(self):
+        "return a string representation"
         return self.format(0)
-
-    __repr__ = __str__
 
 TAGS = {
     "a": (False, "Defines a hyperlink"),
@@ -50,7 +60,8 @@ TAGS = {
     "audio": (False, "Defines sound content"),
     "b": (False, "Defines bold text"),
     "base": (False, "Defines a base URL for all the links in a page"),
-    "bdi": (False, "Defines text that is isolated from its surrounding text direction settings"),
+    "bdi": (False, "Defines text that is isolated from its surrounding"
+        "text direction settings"),
     "bdo": (False, "Defines the direction of text display"),
     "blockquote": (False, "Defines a long quotation"),
     "body": (False, "Defines the body element"),
@@ -117,7 +128,8 @@ TAGS = {
     "pre": (False, "Defines preformatted text"),
     "progress": (False, "Represents the progress of a task"),
     "q": (False, "Defines a short quotation"),
-    "rp": (False, "Used in ruby annotations to define what to show if a browser does not support the ruby element"),
+    "rp": (False, "Used in ruby annotations to define what to show if a "
+            "browser does not support the ruby element"),
     "rt": (False, "Defines explanation to ruby annotations"),
     "ruby": (False, "Defines ruby annotations"),
     "s": (False, "Defines text that is no longer correct"),
@@ -126,7 +138,8 @@ TAGS = {
     "section": (False, "Defines a section"),
     "select": (False, "Defines a selectable list"),
     "small": (False, "Defines smaller text"),
-    "source": (False, "Defines multiple media resources for media elements, such as audio and video"),
+    "source": (False, "Defines multiple media resources for media elements, "
+            "such as audio and video"),
     "span": (False, "Defines a section in a document"),
     "strong": (False, "Defines strong text"),
     "style": (False, "Defines a style definition"),
@@ -151,6 +164,8 @@ TAGS = {
 }
 
 def create_tags(ctx):
+    "create all classes and put them in ctx"
+
     for (tag, info) in TAGS.iteritems():
         class_name = tag.title()
         self_closing, docs = info
