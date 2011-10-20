@@ -9,7 +9,11 @@ class TagBase(ET.Element):
 
     def __init__(self, childs, attrs):
         "add childs and call parent constructor"
-        ET.Element.__init__(self, self.__class__.__name__.lower(), attrs)
+        clean_attrs = dict([(key.rstrip("_"), val)
+            for (key, val) in attrs.iteritems()])
+        tag = self.__class__.__name__.lower()
+
+        ET.Element.__init__(self, tag, clean_attrs)
 
         for child in childs:
             self.append(child)
@@ -18,33 +22,31 @@ class TagBase(ET.Element):
         "pretty print the object"
         one_indent = " " * increment
         indent = one_indent * level
+
         attrs = " ".join(['%s="%s"' % (name, val)
             for (name, val) in self.attrib.iteritems()])
+        if attrs:
+            attrs = " " + attrs
 
         if self.__class__.SELF_CLOSING:
             return "%s<%s%s />" % (indent, self.tag, attrs)
         else:
 
-            new_line = "\n" + indent
-
-            if attrs:
-                attrs = " " + attrs
-
             def format_child(child):
                 """transform childs to string representations"""
                 if isinstance(child, TagBase):
-                    return child.format(level + increment)
+                    return child.format(level + 1, increment)
                 else:
                     return indent + one_indent + str(child)
 
-            childs = new_line.join([format_child(child)
+            childs = "\n".join([format_child(child)
                 for child in list(self)])
 
             if childs:
-                childs = new_line + childs + "\n"
+                childs = "\n" + childs + "\n"
 
-            return "%s<%s%s>%s%s</%s>" % (indent, self.tag, attrs, childs,
-                    indent, self.tag)
+            return "%s<%s%s>%s%s</%s>" % (indent, self.tag, attrs,
+                    childs, indent, self.tag)
 
     def __str__(self):
         "return a string representation"
@@ -172,7 +174,6 @@ def create_tags(ctx):
 
         def __init__(self, *childs, **attrs):
             TagBase.__init__(self, childs, attrs)
-
 
         cls = type(class_name, (TagBase,), {
             "__doc__": docs,
