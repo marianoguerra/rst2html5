@@ -39,29 +39,39 @@ class TagBase(ET.Element):
         if attrs:
             attrs = " " + attrs
 
+        def format_child(child):
+            """transform childs to string representations"""
+            if isinstance(child, TagBase):
+                return child.format(level + 1, increment)
+            else:
+                return indent + one_indent + quote(unicode(child))
+
+        childs = "\n".join([format_child(child)
+            for child in list(self)])
+
+        if childs:
+            childs = "\n" + childs + "\n"
+
+        return self._format(indent, attrs, childs)
+
+    def _format(self, indent, attrs, childs):
         if self.__class__.SELF_CLOSING:
             return "%s<%s%s />" % (indent, self.tag, attrs)
         else:
-
-            def format_child(child):
-                """transform childs to string representations"""
-                if isinstance(child, TagBase):
-                    return child.format(level + 1, increment)
-                else:
-                    return indent + one_indent + quote(str(child))
-
-            childs = "\n".join([format_child(child)
-                for child in list(self)])
-
-            if childs:
-                childs = "\n" + childs + "\n"
-
             return "%s<%s%s>%s%s</%s>" % (indent, self.tag, attrs,
                     childs, indent, self.tag)
 
     def __str__(self):
         "return a string representation"
         return self.format(0)
+
+class Comment(TagBase):
+
+    def __init__(self, *childs, **attrs):
+        TagBase.__init__(self, childs, attrs)
+
+    def _format(self, indent, attrs, childs):
+        return "%s<!--%s%s-->" % (indent, childs, indent)
 
 TAGS = {
     "a": (False, "Defines a hyperlink"),
