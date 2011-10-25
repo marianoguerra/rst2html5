@@ -31,3 +31,21 @@ aside{
  margin: 1em;
  margin-right: 0;
 }
+
+.footnote, cite{
+ width: 98%;
+ display: table;
+ border: 1px solid #ddd;
+ padding: 0.5%;
+ margin: 0.5%;
+}
+
+.footnote .du-label, cite .du-label{
+ float: left;
+ height: 100%;
+ width: 5%;
+ margin-right: 1em;
+ padding: 0.5%;
+ text-align: center;
+ display: table;
+}

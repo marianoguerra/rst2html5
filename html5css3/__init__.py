@@ -228,13 +228,13 @@ NODES = {
     "header": Header,
     "image": Img,
     "inline": Span,
-    "label": None,
+    "label": (Div, "du-label"),
     "legend": None,
     "line": None,
     "line_block": None,
     "list_item": Li,
     "literal": (Span, "literal"),
-    "literal_block": (Pre, "literal-block prettyprint"),
+    "literal_block": (Pre, "literal-block"),
     "math": None,
     "math_block": None,
     "meta": Meta,
@@ -265,7 +265,7 @@ NODES = {
     "term": Dt,
     "tgroup": Colgroup,
     "thead": Thead,
-    "title": H1,
+    "title": None,
     "title_reference": Cite,
     "topic": None,
     "transition": None
@@ -284,6 +284,8 @@ class HTMLTranslator(nodes.NodeVisitor):
             self.css("html5css3/rst2html5.css"),
             self.css("html5css3/prettify.css")
         )
+
+        self.title_level = 1
 
         lcode = document.settings.language_code
         self.language = languages.get_language(lcode, document.reporter)
@@ -304,9 +306,12 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         return tree.format(0, self.indent)
 
-    def _stack(self, tag):
+    def _stack(self, tag, append_tag=True):
         self.parents.append(self.current)
-        self.current.append(tag)
+
+        if append_tag:
+            self.current.append(tag)
+
         self.current = tag
 
     def pop_parent(self, node):
@@ -317,6 +322,33 @@ class HTMLTranslator(nodes.NodeVisitor):
 
     def depart_Text(self, node):
         pass
+
+    def visit_title(self, node):
+        heading = HEADINGS.get(self.title_level, H6)()
+        current = heading
+        insert_current = True
+
+        if node.hasattr('refid'):
+            current = A(href= '#' + node['refid'])
+            heading.append(current)
+            insert_current = False
+            self.current.append(heading)
+
+        self._stack(current, insert_current)
+
+    def visit_topic(self, node):
+        self.title_level += 1
+        self._stack(Div(class_="topic"))
+
+    def depart_topic(self, node):
+        self.title_level -= 1
+        self.pop_parent(node)
+
+    def visit_section(self, node):
+        self.title_level += 1
+        self._stack(Section())
+
+    depart_section = depart_topic
 
     def visit_document(self, node):
         self.head[0][0] = node.get('title', 'document')
@@ -442,7 +474,7 @@ class HTMLTranslator(nodes.NodeVisitor):
         nodename = node.__class__.__name__
 
         handler = NODES.get(nodename, None)
-        handled_elsewhere = False
+        already_inserted = False
 
         if isinstance(handler, tuple):
             tag_class, cls = handler
@@ -451,17 +483,13 @@ class HTMLTranslator(nodes.NodeVisitor):
             new_current = handler()
         elif callable(handler):
             new_current = handler(node, self)
-            handled_elsewhere = True
+            already_inserted = True
         else:
             new_current = Div(class_=nodename)
 
-        self.parents.append(self.current)
-
-        if not handled_elsewhere:
-            self.current.append(new_current)
-
-        self.current = new_current
+        self._stack(new_current, not already_inserted)
 
     unknown_departure = pop_parent
     depart_reference = pop_parent
+    depart_title = pop_parent
 
