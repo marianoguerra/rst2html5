@@ -105,6 +105,17 @@ def docinfo_item(node, translator, inner=None):
 
     return current
 
+def problematic(node, translator):
+    name = node.tagname
+    label = translator.language.labels.get(name, name)
+
+    current = Span(class_="problematic")
+    wrapper = A(current, href="#" + node['refid'])
+
+    translator.current.append(wrapper)
+
+    return current
+
 def classifier(node, translator):
     term = translator.current[-1]
 
@@ -123,14 +134,16 @@ def admonition(node, translator):
     if classes:
         classes = " " + classes
 
+    cls = 'alert-message block-message '
+
     if tagname in ('note', 'tip', 'hint'):
-        cls = 'alert-message block-message info'
+        cls += 'info'
     elif tagname in ('attention', 'caution', 'important', 'warning'):
-        cls = 'alert-message block-message warning'
+        cls += 'warning'
     elif tagname in ('error', 'danger'):
-        cls = 'alert-message block-message error'
+        cls += 'error'
     else:
-        cls = 'alert-message block-message ' + tagname
+        cls += tagname
 
     cls += classes
 
@@ -186,16 +199,16 @@ NODES = {
     "citation": Cite,
     "citation_reference": None,
     "classifier": classifier,
-    "colspec": None,
+    "colspec": skip,
     "comment": Comment,
     "compound": None,
     "container": None,
-    "decoration": None,
+    "decoration": skip,
     "definition": Dd,
     "definition_list": Dl,
     "definition_list_item": skip,
     "description": Td,
-    "doctest_block": Pre,
+    "doctest_block": (Pre, "prettyprint"),
     "document": None,
     "emphasis": Em,
     "entry": Td,
@@ -217,8 +230,8 @@ NODES = {
     "line": None,
     "line_block": None,
     "list_item": Li,
-    "literal": (Span, "pre"),
-    "literal_block": (Pre, "literal-block"),
+    "literal": (Span, "literal"),
+    "literal_block": (Pre, "literal-block prettyprint"),
     "math": None,
     "math_block": None,
     "meta": Meta,
@@ -229,7 +242,7 @@ NODES = {
     "option_list_item": Tr,
     "option_string": skip,
     "paragraph": P,
-    "problematic": None,
+    "problematic": problematic,
     "raw": None,
     "reference": None,
     "row": Tr,
@@ -250,7 +263,7 @@ NODES = {
     "tgroup": Colgroup,
     "thead": Thead,
     "title": H1,
-    "title_reference": None,
+    "title_reference": Cite,
     "topic": None,
     "transition": None
 }
@@ -262,6 +275,12 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.indent = 1
         self.parents = []
         self.current = self.root
+        self.head =  Head(
+            Title("document"),
+            self.css("html5css3/bootstrap.css"),
+            self.css("html5css3/rst2html5.css"),
+            self.css("html5css3/prettify.css")
+        )
 
         lcode = document.settings.language_code
         self.language = languages.get_language(lcode, document.reporter)
@@ -270,17 +289,22 @@ class HTMLTranslator(nodes.NodeVisitor):
         content = open(path).read()
         return Style(content, type="text/css")
 
+    def js(self, path):
+        content = open(path).read().decode('utf-8')
+        return Script(content)
+
     def astext(self):
-        tree = Html(
-            Head(
-                Title("document"),
-                self.css("html5css3/bootstrap.css"),
-                self.css("html5css3/rst2html5.css")
-            ),
-            self.root
-        )
+        self.root.append(self.js("html5css3/jquery-1.6.4.min.js"))
+        self.root.append(self.js("html5css3/prettify.js"))
+        self.root.append(Script("$(function () { prettyPrint() })"))
+        tree = Html(self.head, self.root)
 
         return tree.format(0, self.indent)
+
+    def _stack(self, tag):
+        self.parents.append(self.current)
+        self.current.append(tag)
+        self.current = tag
 
     def pop_parent(self, node):
         self.current = self.parents.pop()
@@ -289,6 +313,12 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.current.append(node.astext())
 
     def depart_Text(self, node):
+        pass
+
+    def visit_document(self, node):
+        self.head[0][0] = node.get('title', 'document')
+
+    def depart_document(self, node):
         pass
 
     def visit_reference(self, node):
@@ -308,18 +338,21 @@ class HTMLTranslator(nodes.NodeVisitor):
             atts['class'] += ' image-reference'
 
         tag.attrib.update(atts)
+        self._stack(tag)
 
-        self.parents.append(self.current)
-        self.current.append(tag)
-        self.current = tag
+    def visit_citation_reference(self, node):
+        tag = A(href='#' + node['refid'], class_="citation-reference")
+        self._stack(tag)
 
     def visit_footnote_reference(self, node):
         href = '#' + node['refid']
         tag = A(class_="footnote-reference", href=href)
 
-        self.parents.append(self.current)
-        self.current.append(Sup(tag))
-        self.current = tag
+        self._stack(tag)
+
+    def visit_target(self, node):
+        #if not ('refuri' in node or 'refid' in node or 'refname' in node):
+        self._stack(Span(class_="target"))
 
     def visit_author(self, node):
         if isinstance(self.current, Ul):
@@ -400,9 +433,7 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         tag.attrib.update(atts)
 
-        self.parents.append(self.current)
-        self.current.append(Sup(tag))
-        self.current = tag
+        self._stack(tag)
 
     def unknown_visit(self, node):
         nodename = node.__class__.__name__

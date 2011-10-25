@@ -31,6 +31,34 @@ class TagBase(ET.Element):
         for child in childs:
             self.append(child)
 
+    def _format_child(self, child, level=0, increment=1, be_compact=False):
+        """transform childs to string representations"""
+        one_indent = " " * increment
+        indent = one_indent * level
+        cls = self.__class__
+
+        nl = "\n"
+
+        if cls.COMPACT or be_compact:
+            nl = ""
+            indent = ""
+            one_indent = ""
+
+        if isinstance(child, TagBase):
+            result = child.format(level + 1, increment)
+        else:
+            child = unicode(child)
+
+            if cls.QUOTE:
+                child = quote(child)
+
+            result = child
+            indent = ""
+            nl = ""
+            one_indent = ""
+
+        return indent + result + nl
+
     def format(self, level=0, increment=1, be_compact=False):
         "pretty print the object"
         one_indent = " " * increment
@@ -41,33 +69,23 @@ class TagBase(ET.Element):
 
         if cls.COMPACT or be_compact:
             nl = ""
+            indent = ""
+            one_indent = ""
 
         attrs = " ".join(['%s="%s"' % (name, val)
             for (name, val) in self.attrib.iteritems()])
         if attrs:
             attrs = " " + attrs
 
-        def format_child(child):
-            """transform childs to string representations"""
-            if isinstance(child, TagBase):
-                result = child.format(level + 1, increment)
 
-                return result
-            else:
-                child = unicode(child)
+        should_be_compact = False
+        formatted = []
+        for child in list(self):
+            item = self._format_child(child, be_compact=should_be_compact)
+            formatted.append(item)
+            should_be_compact = isinstance(child, basestring)
 
-                if cls.QUOTE:
-                    child = quote(child)
-
-                indentation = indent + one_indent
-
-                if cls.COMPACT or be_compact:
-                    indentation = ""
-
-                return indentation + child
-
-        childs = nl.join([format_child(child)
-            for child in list(self)])
+        childs = "".join(formatted)
 
         if childs:
             childs = nl + childs + nl
@@ -114,7 +132,7 @@ TAGS = {
     "button": (True, False, False, "Defines a push button"),
     "canvas": (True, False, False, "Defines graphics"),
     "caption": (True, False, False, "Defines a table caption"),
-    "cite": (True, False, False, "Defines a citation"),
+    "cite": (True, True, False, "Defines a citation"),
     "code": (True, False, False, "Defines computer code text"),
     "col": (True, False, False, "Defines attributes for table columns "),
     "colgroup": (True, False, False, "Defines groups of table columns"),
@@ -127,32 +145,32 @@ TAGS = {
     "div": (True, False, False, "Defines a section in a document"),
     "dl": (True, False, False, "Defines a definition list"),
     "dt": (True, False, False, "Defines a definition term"),
-    "em": (True, False, False, "Defines emphasized text "),
+    "em": (True, True, False, "Defines emphasized text "),
     "embed": (True, False, False, "Defines external interactive content or plugin"),
     "fieldset": (True, False, False, "Defines a fieldset"),
     "figcaption": (True, False, False, "Defines the caption of a figure element"),
     "figure": (True, False, False, "Defines a group of media content, and their caption"),
     "footer": (True, False, False, "Defines a footer for a section or page"),
     "form": (True, False, False, "Defines a form "),
-    "h1": (True, False, False, "Defines header level 1"),
-    "h2": (True, False, False, "Defines header level 2"),
-    "h3": (True, False, False, "Defines header level 3"),
-    "h4": (True, False, False, "Defines header level 4"),
-    "h5": (True, False, False, "Defines header level 5"),
-    "h6": (True, False, False, "Defines header level 6"),
+    "h1": (True, True, False, "Defines header level 1"),
+    "h2": (True, True, False, "Defines header level 2"),
+    "h3": (True, True, False, "Defines header level 3"),
+    "h4": (True, True, False, "Defines header level 4"),
+    "h5": (True, True, False, "Defines header level 5"),
+    "h6": (True, True, False, "Defines header level 6"),
     "head": (True, False, False, "Defines information about the document"),
     "header": (True, False, False, "Defines a header for a section or page"),
     "hgroup": (True, False, False, "Defines information about a section in a document"),
     "hr": (True, False, True, "Defines a horizontal rule"),
     "html": (True, False, False, "Defines an html document"),
-    "i": (True, False, False, "Defines italic text"),
+    "i": (True, True, False, "Defines italic text"),
     "iframe": (True, False, False, "Defines an inline sub window (frame)"),
     "img": (True, False, True, "Defines an image"),
     "input": (True, False, True, "Defines an input field"),
     "ins": (True, False, False, "Defines inserted text"),
     "keygen": (True, False, False, "Defines a key pair generator field (for forms)"),
     "kbd": (True, False, False, "Defines keyboard text"),
-    "label": (True, False, False, "Defines a label for a form control"),
+    "label": (True, True, False, "Defines a label for a form control"),
     "legend": (True, False, False, "Defines a title in a fieldset"),
     "li": (True, False, False, "Defines a list item"),
     "link": (True, False, False, "Defines a resource reference"),
@@ -168,7 +186,7 @@ TAGS = {
     "optgroup": (True, False, False, "Defines an option group"),
     "option": (True, False, False, "Defines an option in a drop-down list"),
     "output": (True, False, False, "Defines the result of a calculation"),
-    "p": (True, False, False, "Defines a paragraph"),
+    "p": (True, True, False, "Defines a paragraph"),
     "param": (True, False, False, "Defines a parameter for an object"),
     "pre": (True, True, False, "Defines preformatted text"),
     "progress": (True, False, False, "Represents the progress of a task"),
@@ -177,20 +195,20 @@ TAGS = {
             "browser does not support the ruby element"),
     "rt": (True, False, False, "Defines explanation to ruby annotations"),
     "ruby": (True, False, False, "Defines ruby annotations"),
-    "s": (True, False, False, "Defines text that is no longer correct"),
+    "s": (True, True, False, "Defines text that is no longer correct"),
     "samp": (True, False, False, "Defines sample computer code"),
-    "script": (True, False, False, "Defines a script"),
+    "script": (False, True, False, "Defines a script"),
     "section": (True, False, False, "Defines a section"),
     "select": (True, False, False, "Defines a selectable list"),
-    "small": (True, False, False, "Defines smaller text"),
+    "small": (True, True, False, "Defines smaller text"),
     "source": (True, False, False, "Defines multiple media resources for media elements, "
             "such as audio and video"),
     "span": (True, True, False, "Defines a section in a document"),
-    "strong": (True, False, False, "Defines strong text"),
+    "strong": (True, True, False, "Defines strong text"),
     "style": (False, False, False, "Defines a style definition"),
-    "sub": (True, False, False, "Defines subscripted text"),
+    "sub": (True, True, False, "Defines subscripted text"),
     "summary": (True, False, False, "Defines the header of a 'detail' element"),
-    "sup": (True, False, False, "Defines superscripted text"),
+    "sup": (True, True, False, "Defines superscripted text"),
     "table": (True, False, False, "Defines a table"),
     "tbody": (True, False, False, "Defines a table body"),
     "td": (True, False, False, "Defines a table cell"),
@@ -203,7 +221,7 @@ TAGS = {
     "tr": (True, False, False, "Defines a table row"),
     "track": (True, False, False, "Defines text tracks used in mediaplayers"),
     "ul": (True, False, False, "Defines an unordered list"),
-    "var": (True, False, False, "Defines a variable"),
+    "var": (True, True, False, "Defines a variable"),
     "video": (True, False, False, "Defines a video or movie"),
     "wbr": (True, False, False, "Defines a possible line-break")
 }
