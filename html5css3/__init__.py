@@ -160,6 +160,9 @@ def admonition(node, translator):
 def skip(node, translator):
     return translator.current
 
+def swallow_childs(node, translator):
+    return Span(class_="remove-me")
+
 NODES = {
     "Text": None,
     "abbreviation": Abbr,
@@ -251,7 +254,7 @@ NODES = {
     "sidebar": Aside,
     "strong": Strong,
     "subscript": Sub,
-    "substitution_definition": None,
+    "substitution_definition": swallow_childs,
     "substitution_reference": None,
     "subtitle": H2,
     "superscript": Sup,
