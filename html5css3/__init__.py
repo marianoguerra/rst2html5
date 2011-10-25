@@ -101,7 +101,7 @@ def docinfo_item(node, translator, inner=None):
         current = inner()
         td.append(current)
 
-    translator.current.append(Tr(Th(label), td))
+    translator._append(Tr(Td(label, class_="field-label"), td), node)
 
     return current
 
@@ -112,7 +112,7 @@ def problematic(node, translator):
     current = Span(class_="problematic")
     wrapper = A(current, href="#" + node['refid'])
 
-    translator.current.append(wrapper)
+    translator._append(wrapper, node)
 
     return current
 
@@ -153,7 +153,7 @@ def admonition(node, translator):
         title = tagname.title()
 
     div = Div(P(title, class_="admonition-title"), class_=cls)
-    translator.current.append(div)
+    translator._append(div, node)
 
     return div
 
@@ -214,12 +214,12 @@ NODES = {
     "doctest_block": (Pre, "prettyprint"),
     "document": None,
     "emphasis": Em,
-    "entry": Td,
+    "entry": None,
     "enumerated_list": Ol,
     "field": Tr,
     "field_body": Td,
     "field_list": Table,
-    "field_name": Th,
+    "field_name": (Td, "field-label"),
     "figure": None,
     "footer": Footer,
     "footnote": None,
@@ -306,19 +306,85 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         return tree.format(0, self.indent)
 
-    def _stack(self, tag, append_tag=True):
+    def _stack(self, tag, node, append_tag=True):
         self.parents.append(self.current)
 
         if append_tag:
-            self.current.append(tag)
+            self._append(tag, node)
 
         self.current = tag
+
+    def _append(self, tag, node):
+        self.current.append(tag)
+
+        if isinstance(tag, basestring):
+            return
+
+        atts = {}
+        ids = []
+
+        classes = node.get('classes', [])
+
+        cls = node.get("class", None)
+        if cls is not None:
+            classes.append(cls)
+
+        # move language specification to 'lang' attribute
+        languages = [cls for cls in classes
+                     if cls.startswith('language-')]
+
+        if languages:
+            # attribute name is 'lang' in XHTML 1.0 but 'xml:lang' in 1.1
+            atts['lang'] = languages[0][9:]
+            classes.pop(classes.index(languages[0]))
+
+        classes = ' '.join(classes).strip()
+
+        if classes:
+            atts['class'] = classes
+
+        assert 'id' not in atts
+
+        ids.extend(node.get('ids', []))
+
+        if 'ids' in atts:
+            ids.extend(atts['ids'])
+            del atts['ids']
+
+        if ids:
+            atts['id'] = ids[0]
+
+            for id in ids[1:]:
+                self.current.append(Span(id=id))
+
+        tag.attrib.update(atts)
+
 
     def pop_parent(self, node):
         self.current = self.parents.pop()
 
     def visit_Text(self, node):
-        self.current.append(node.astext())
+        self._append(node.astext(), node)
+
+    def visit_entry(self, node):
+        atts = {}
+        if isinstance(node.parent.parent, nodes.thead):
+            tag = Th()
+        else:
+            tag = Td()
+
+        if 'morerows' in node:
+            atts['rowspan'] = node['morerows'] + 1
+
+        if 'morecols' in node:
+            atts['colspan'] = node['morecols'] + 1
+
+        tag.attrib.update(atts)
+
+        if len(node) == 0:              # empty cell
+            tag.append(".")
+
+        self._stack(tag, node)
 
     def depart_Text(self, node):
         pass
@@ -332,13 +398,13 @@ class HTMLTranslator(nodes.NodeVisitor):
             current = A(href= '#' + node['refid'])
             heading.append(current)
             insert_current = False
-            self.current.append(heading)
+            self._append(heading, node)
 
-        self._stack(current, insert_current)
+        self._stack(current, node, insert_current)
 
     def visit_topic(self, node):
         self.title_level += 1
-        self._stack(Div(class_="topic"))
+        self._stack(Div(class_="topic"), node)
 
     def depart_topic(self, node):
         self.title_level -= 1
@@ -346,7 +412,7 @@ class HTMLTranslator(nodes.NodeVisitor):
 
     def visit_section(self, node):
         self.title_level += 1
-        self._stack(Section())
+        self._stack(Section(), node)
 
     depart_section = depart_topic
 
@@ -373,26 +439,26 @@ class HTMLTranslator(nodes.NodeVisitor):
             atts['class'] += ' image-reference'
 
         tag.attrib.update(atts)
-        self._stack(tag)
+        self._stack(tag, node)
 
     def visit_citation_reference(self, node):
         tag = A(href='#' + node['refid'], class_="citation-reference")
-        self._stack(tag)
+        self._stack(tag, node)
 
     def visit_footnote_reference(self, node):
         href = '#' + node['refid']
         tag = A(class_="footnote-reference", href=href)
 
-        self._stack(tag)
+        self._stack(tag, node)
 
     def visit_target(self, node):
         #if not ('refuri' in node or 'refid' in node or 'refname' in node):
-        self._stack(Span(class_="target"))
+        self._stack(Span(class_="target"), node)
 
     def visit_author(self, node):
         if isinstance(self.current, Ul):
             tag = Li(class_="author")
-            self.current.append(tag)
+            self._append(tag, node)
         else:
             tag = docinfo_item(node, self)
 
@@ -449,15 +515,10 @@ class HTMLTranslator(nodes.NodeVisitor):
                     atts[att_name] += 'px'
                 style.append('%s: %s;' % (att_name, atts[att_name]))
                 del atts[att_name]
+
         if style:
             atts['style'] = ' '.join(style)
-        if (isinstance(node.parent, nodes.TextElement) or
-            (isinstance(node.parent, nodes.reference) and
-             not isinstance(node.parent.parent, nodes.TextElement))):
-            # Inline context or surrounded by <a>...</a>.
-            suffix = ''
-        else:
-            suffix = '\n'
+
         if 'align' in node:
             atts['class'] = 'align-%s' % node['align']
 
@@ -468,7 +529,7 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         tag.attrib.update(atts)
 
-        self._stack(tag)
+        self._stack(tag, node)
 
     def unknown_visit(self, node):
         nodename = node.__class__.__name__
@@ -487,7 +548,7 @@ class HTMLTranslator(nodes.NodeVisitor):
         else:
             new_current = Div(class_=nodename)
 
-        self._stack(new_current, not already_inserted)
+        self._stack(new_current, node, not already_inserted)
 
     unknown_departure = pop_parent
     depart_reference = pop_parent

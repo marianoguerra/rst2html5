@@ -6,11 +6,6 @@ li>p{
  margin-bottom: 0;
 }
 
-.authors{
- margin: 0;
- padding: 0;
-}
-
 .line{
  margin-bottom: 0.3em;
  display: table;
@@ -48,4 +43,13 @@ aside{
  padding: 0.5%;
  text-align: center;
  display: table;
+}
+
+th, th p{
+ background-color: #f5f5f5;
+ font-weight: bold;
+}
+
+.field-label{
+ font-weight: bold;
 }
