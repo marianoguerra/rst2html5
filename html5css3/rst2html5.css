@@ -1,0 +1,22 @@
+body{
+ margin: 5% 15%;
+}
+
+li>p{
+ margin-bottom: 0;
+}
+
+.authors{
+ margin: 0;
+ padding: 0;
+}
+
+.line{
+ margin-bottom: 0.3em;
+ display: table;
+}
+
+.admonition-title {
+    font-size: 1.3em;
+    font-weight: bold;
+}

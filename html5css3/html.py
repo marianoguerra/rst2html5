@@ -17,6 +17,8 @@ class TagBase(ET.Element):
     "base class for all tags"
 
     SELF_CLOSING = False
+    COMPACT = False
+    QUOTE = True
 
     def __init__(self, childs, attrs):
         "add childs and call parent constructor"
@@ -29,10 +31,16 @@ class TagBase(ET.Element):
         for child in childs:
             self.append(child)
 
-    def format(self, level=0, increment=1):
+    def format(self, level=0, increment=1, be_compact=False):
         "pretty print the object"
         one_indent = " " * increment
         indent = one_indent * level
+        cls = self.__class__
+
+        nl = "\n"
+
+        if cls.COMPACT or be_compact:
+            nl = ""
 
         attrs = " ".join(['%s="%s"' % (name, val)
             for (name, val) in self.attrib.iteritems()])
@@ -42,20 +50,34 @@ class TagBase(ET.Element):
         def format_child(child):
             """transform childs to string representations"""
             if isinstance(child, TagBase):
-                return child.format(level + 1, increment)
-            else:
-                return indent + one_indent + quote(unicode(child))
+                result = child.format(level + 1, increment)
 
-        childs = "\n".join([format_child(child)
+                return result
+            else:
+                child = unicode(child)
+
+                if cls.QUOTE:
+                    child = quote(child)
+
+                indentation = indent + one_indent
+
+                if cls.COMPACT or be_compact:
+                    indentation = ""
+
+                return indentation + child
+
+        childs = nl.join([format_child(child)
             for child in list(self)])
 
         if childs:
-            childs = "\n" + childs + "\n"
+            childs = nl + childs + nl
 
         return self._format(indent, attrs, childs)
 
     def _format(self, indent, attrs, childs):
-        if self.__class__.SELF_CLOSING:
+        cls = self.__class__
+
+        if cls.SELF_CLOSING:
             return "%s<%s%s />" % (indent, self.tag, attrs)
         else:
             return "%s<%s%s>%s%s</%s>" % (indent, self.tag, attrs,
@@ -74,116 +96,116 @@ class Comment(TagBase):
         return "%s<!--%s%s-->" % (indent, childs, indent)
 
 TAGS = {
-    "a": (False, "Defines a hyperlink"),
-    "abbr": (False, "Defines an abbreviation"),
-    "address": (False, "Defines an address element"),
-    "area": (False, "Defines an area inside an image map"),
-    "article": (False, "Defines an article"),
-    "aside": (False, "Defines content aside from the page content"),
-    "audio": (False, "Defines sound content"),
-    "b": (False, "Defines bold text"),
-    "base": (False, "Defines a base URL for all the links in a page"),
-    "bdi": (False, "Defines text that is isolated from its surrounding"
+    "a": (True, True, False, "Defines a hyperlink"),
+    "abbr": (True, False, False, "Defines an abbreviation"),
+    "address": (True, False, False, "Defines an address element"),
+    "area": (True, False, False, "Defines an area inside an image map"),
+    "article": (True, False, False, "Defines an article"),
+    "aside": (True, False, False, "Defines content aside from the page content"),
+    "audio": (True, False, False, "Defines sound content"),
+    "b": (True, False, False, "Defines bold text"),
+    "base": (True, False, False, "Defines a base URL for all the links in a page"),
+    "bdi": (True, False, False, "Defines text that is isolated from its surrounding"
         "text direction settings"),
-    "bdo": (False, "Defines the direction of text display"),
-    "blockquote": (False, "Defines a long quotation"),
-    "body": (False, "Defines the body element"),
-    "br": (True, "Inserts a single line break"),
-    "button": (False, "Defines a push button"),
-    "canvas": (False, "Defines graphics"),
-    "caption": (False, "Defines a table caption"),
-    "cite": (False, "Defines a citation"),
-    "code": (False, "Defines computer code text"),
-    "col": (False, "Defines attributes for table columns "),
-    "colgroup": (False, "Defines groups of table columns"),
-    "command": (False, "Defines a command button"),
-    "datalist": (False, "Defines a list of options for an input field"),
-    "dd": (False, "Defines a definition description"),
-    "del": (False, "Defines deleted text"),
-    "details": (False, "Defines details of an element"),
-    "dfn": (False, "Defines a definition term"),
-    "div": (False, "Defines a section in a document"),
-    "dl": (False, "Defines a definition list"),
-    "dt": (False, "Defines a definition term"),
-    "em": (False, "Defines emphasized text "),
-    "embed": (False, "Defines external interactive content or plugin"),
-    "fieldset": (False, "Defines a fieldset"),
-    "figcaption": (False, "Defines the caption of a figure element"),
-    "figure": (False, "Defines a group of media content, and their caption"),
-    "footer": (False, "Defines a footer for a section or page"),
-    "form": (False, "Defines a form "),
-    "h1": (False, "Defines header level 1"),
-    "h2": (False, "Defines header level 2"),
-    "h3": (False, "Defines header level 3"),
-    "h4": (False, "Defines header level 4"),
-    "h5": (False, "Defines header level 5"),
-    "h6": (False, "Defines header level 6"),
-    "head": (False, "Defines information about the document"),
-    "header": (False, "Defines a header for a section or page"),
-    "hgroup": (False, "Defines information about a section in a document"),
-    "hr": (True, "Defines a horizontal rule"),
-    "html": (False, "Defines an html document"),
-    "i": (False, "Defines italic text"),
-    "iframe": (False, "Defines an inline sub window (frame)"),
-    "img": (True, "Defines an image"),
-    "input": (True, "Defines an input field"),
-    "ins": (False, "Defines inserted text"),
-    "keygen": (False, "Defines a key pair generator field (for forms)"),
-    "kbd": (False, "Defines keyboard text"),
-    "label": (False, "Defines a label for a form control"),
-    "legend": (False, "Defines a title in a fieldset"),
-    "li": (False, "Defines a list item"),
-    "link": (False, "Defines a resource reference"),
-    "map": (False, "Defines an image map "),
-    "mark": (False, "Defines marked text"),
-    "menu": (False, "Defines a menu list"),
-    "meta": (True, "Defines meta information"),
-    "meter": (False, "Defines a scalar measurement within a known range"),
-    "nav": (False, "Defines navigation links"),
-    "noscript": (False, "Defines a noscript section"),
-    "object": (False, "Defines an embedded object"),
-    "ol": (False, "Defines an ordered list"),
-    "optgroup": (False, "Defines an option group"),
-    "option": (False, "Defines an option in a drop-down list"),
-    "output": (False, "Defines the result of a calculation"),
-    "p": (False, "Defines a paragraph"),
-    "param": (False, "Defines a parameter for an object"),
-    "pre": (False, "Defines preformatted text"),
-    "progress": (False, "Represents the progress of a task"),
-    "q": (False, "Defines a short quotation"),
-    "rp": (False, "Used in ruby annotations to define what to show if a "
+    "bdo": (True, False, False, "Defines the direction of text display"),
+    "blockquote": (True, False, False, "Defines a long quotation"),
+    "body": (True, False, False, "Defines the body element"),
+    "br": (True, False, True, "Inserts a single line break"),
+    "button": (True, False, False, "Defines a push button"),
+    "canvas": (True, False, False, "Defines graphics"),
+    "caption": (True, False, False, "Defines a table caption"),
+    "cite": (True, False, False, "Defines a citation"),
+    "code": (True, False, False, "Defines computer code text"),
+    "col": (True, False, False, "Defines attributes for table columns "),
+    "colgroup": (True, False, False, "Defines groups of table columns"),
+    "command": (True, False, False, "Defines a command button"),
+    "datalist": (True, False, False, "Defines a list of options for an input field"),
+    "dd": (True, False, False, "Defines a definition description"),
+    "del": (True, False, False, "Defines deleted text"),
+    "details": (True, False, False, "Defines details of an element"),
+    "dfn": (True, False, False, "Defines a definition term"),
+    "div": (True, False, False, "Defines a section in a document"),
+    "dl": (True, False, False, "Defines a definition list"),
+    "dt": (True, False, False, "Defines a definition term"),
+    "em": (True, False, False, "Defines emphasized text "),
+    "embed": (True, False, False, "Defines external interactive content or plugin"),
+    "fieldset": (True, False, False, "Defines a fieldset"),
+    "figcaption": (True, False, False, "Defines the caption of a figure element"),
+    "figure": (True, False, False, "Defines a group of media content, and their caption"),
+    "footer": (True, False, False, "Defines a footer for a section or page"),
+    "form": (True, False, False, "Defines a form "),
+    "h1": (True, False, False, "Defines header level 1"),
+    "h2": (True, False, False, "Defines header level 2"),
+    "h3": (True, False, False, "Defines header level 3"),
+    "h4": (True, False, False, "Defines header level 4"),
+    "h5": (True, False, False, "Defines header level 5"),
+    "h6": (True, False, False, "Defines header level 6"),
+    "head": (True, False, False, "Defines information about the document"),
+    "header": (True, False, False, "Defines a header for a section or page"),
+    "hgroup": (True, False, False, "Defines information about a section in a document"),
+    "hr": (True, False, True, "Defines a horizontal rule"),
+    "html": (True, False, False, "Defines an html document"),
+    "i": (True, False, False, "Defines italic text"),
+    "iframe": (True, False, False, "Defines an inline sub window (frame)"),
+    "img": (True, False, True, "Defines an image"),
+    "input": (True, False, True, "Defines an input field"),
+    "ins": (True, False, False, "Defines inserted text"),
+    "keygen": (True, False, False, "Defines a key pair generator field (for forms)"),
+    "kbd": (True, False, False, "Defines keyboard text"),
+    "label": (True, False, False, "Defines a label for a form control"),
+    "legend": (True, False, False, "Defines a title in a fieldset"),
+    "li": (True, False, False, "Defines a list item"),
+    "link": (True, False, False, "Defines a resource reference"),
+    "map": (True, False, False, "Defines an image map "),
+    "mark": (True, False, False, "Defines marked text"),
+    "menu": (True, False, False, "Defines a menu list"),
+    "meta": (True, False, True, "Defines meta information"),
+    "meter": (True, False, False, "Defines a scalar measurement within a known range"),
+    "nav": (True, False, False, "Defines navigation links"),
+    "noscript": (True, False, False, "Defines a noscript section"),
+    "object": (True, False, False, "Defines an embedded object"),
+    "ol": (True, False, False, "Defines an ordered list"),
+    "optgroup": (True, False, False, "Defines an option group"),
+    "option": (True, False, False, "Defines an option in a drop-down list"),
+    "output": (True, False, False, "Defines the result of a calculation"),
+    "p": (True, False, False, "Defines a paragraph"),
+    "param": (True, False, False, "Defines a parameter for an object"),
+    "pre": (True, True, False, "Defines preformatted text"),
+    "progress": (True, False, False, "Represents the progress of a task"),
+    "q": (True, False, False, "Defines a short quotation"),
+    "rp": (True, False, False, "Used in ruby annotations to define what to show if a "
             "browser does not support the ruby element"),
-    "rt": (False, "Defines explanation to ruby annotations"),
-    "ruby": (False, "Defines ruby annotations"),
-    "s": (False, "Defines text that is no longer correct"),
-    "samp": (False, "Defines sample computer code"),
-    "script": (False, "Defines a script"),
-    "section": (False, "Defines a section"),
-    "select": (False, "Defines a selectable list"),
-    "small": (False, "Defines smaller text"),
-    "source": (False, "Defines multiple media resources for media elements, "
+    "rt": (True, False, False, "Defines explanation to ruby annotations"),
+    "ruby": (True, False, False, "Defines ruby annotations"),
+    "s": (True, False, False, "Defines text that is no longer correct"),
+    "samp": (True, False, False, "Defines sample computer code"),
+    "script": (True, False, False, "Defines a script"),
+    "section": (True, False, False, "Defines a section"),
+    "select": (True, False, False, "Defines a selectable list"),
+    "small": (True, False, False, "Defines smaller text"),
+    "source": (True, False, False, "Defines multiple media resources for media elements, "
             "such as audio and video"),
-    "span": (False, "Defines a section in a document"),
-    "strong": (False, "Defines strong text"),
-    "style": (False, "Defines a style definition"),
-    "sub": (False, "Defines subscripted text"),
-    "summary": (False, "Defines the header of a 'detail' element"),
-    "sup": (False, "Defines superscripted text"),
-    "table": (False, "Defines a table"),
-    "tbody": (False, "Defines a table body"),
-    "td": (False, "Defines a table cell"),
-    "textarea": (False, "Defines a text area"),
-    "tfoot": (False, "Defines a table footer"),
-    "th": (False, "Defines a table header"),
-    "thead": (False, "Defines a table header"),
-    "time": (False, "Defines a date/time"),
-    "title": (False, "Defines the document title"),
-    "tr": (False, "Defines a table row"),
-    "track": (False, "Defines text tracks used in mediaplayers"),
-    "ul": (False, "Defines an unordered list"),
-    "var": (False, "Defines a variable"),
-    "video": (False, "Defines a video or movie"),
-    "wbr": (False, "Defines a possible line-break")
+    "span": (True, True, False, "Defines a section in a document"),
+    "strong": (True, False, False, "Defines strong text"),
+    "style": (False, False, False, "Defines a style definition"),
+    "sub": (True, False, False, "Defines subscripted text"),
+    "summary": (True, False, False, "Defines the header of a 'detail' element"),
+    "sup": (True, False, False, "Defines superscripted text"),
+    "table": (True, False, False, "Defines a table"),
+    "tbody": (True, False, False, "Defines a table body"),
+    "td": (True, False, False, "Defines a table cell"),
+    "textarea": (True, False, False, "Defines a text area"),
+    "tfoot": (True, False, False, "Defines a table footer"),
+    "th": (True, False, False, "Defines a table header"),
+    "thead": (True, False, False, "Defines a table header"),
+    "time": (True, False, False, "Defines a date/time"),
+    "title": (True, False, False, "Defines the document title"),
+    "tr": (True, False, False, "Defines a table row"),
+    "track": (True, False, False, "Defines text tracks used in mediaplayers"),
+    "ul": (True, False, False, "Defines an unordered list"),
+    "var": (True, False, False, "Defines a variable"),
+    "video": (True, False, False, "Defines a video or movie"),
+    "wbr": (True, False, False, "Defines a possible line-break")
 }
 
 def create_tags(ctx):
@@ -191,7 +213,7 @@ def create_tags(ctx):
 
     for (tag, info) in TAGS.iteritems():
         class_name = tag.title()
-        self_closing, docs = info
+        quote, compact, self_closing, docs = info
 
         def __init__(self, *childs, **attrs):
             TagBase.__init__(self, childs, attrs)
@@ -202,6 +224,8 @@ def create_tags(ctx):
         })
 
         cls.SELF_CLOSING = self_closing
+        cls.COMPACT = compact
+        cls.QUOTE = quote
 
         ctx[class_name] = cls
 

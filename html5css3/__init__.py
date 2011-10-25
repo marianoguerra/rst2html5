@@ -84,14 +84,68 @@ class Writer(writers.Writer):
         self.document.walkabout(visitor)
         self.output = visitor.astext()
 
-def docinfo_item(node, translator):
+def docinfo_address(node, translator):
+    return docinfo_item(node, translator, lambda: Pre(class_="address"))
+
+def docinfo_authors(node, translator):
+    return docinfo_item(node, translator, lambda: Ul(class_="authors"))
+
+def docinfo_item(node, translator, inner=None):
     name = node.tagname
     label = translator.language.labels.get(name, name)
 
     td = Td()
-    translator.current.append(Tr(Td(label), td))
+    current = td
 
-    return td
+    if inner is not None:
+        current = inner()
+        td.append(current)
+
+    translator.current.append(Tr(Th(label), td))
+
+    return current
+
+def classifier(node, translator):
+    term = translator.current[-1]
+
+    new_current = Span(class_="classifier")
+
+    term.append(Span(" :", class_="classifier-delimiter"))
+    term.append(new_current)
+
+    return new_current
+
+def admonition(node, translator):
+    classes = " ".join(node.get('classes', []))
+
+    tagname = node.tagname.lower()
+
+    if classes:
+        classes = " " + classes
+
+    if tagname in ('note', 'tip', 'hint'):
+        cls = 'alert-message block-message info'
+    elif tagname in ('attention', 'caution', 'important', 'warning'):
+        cls = 'alert-message block-message warning'
+    elif tagname in ('error', 'danger'):
+        cls = 'alert-message block-message error'
+    else:
+        cls = 'alert-message block-message ' + tagname
+
+    cls += classes
+
+    title = ""
+
+    if tagname != "admonition":
+        title = tagname.title()
+
+    div = Div(P(title, class_="admonition-title"), class_=cls)
+    translator.current.append(div)
+
+    return div
+
+def skip(node, translator):
+    return translator.current
 
 NODES = {
     "Text": None,
@@ -99,13 +153,13 @@ NODES = {
     "acronym": Abbr,
 
     # docinfo
-    "address": docinfo_item,
+    "address": docinfo_address,
     "organization": docinfo_item,
     "revision": docinfo_item,
     "status": docinfo_item,
     "version": docinfo_item,
     "author": docinfo_item,
-    "authors": None,
+    "authors": docinfo_authors,
     "contact": docinfo_item,
     "copyright": docinfo_item,
     "date": docinfo_item,
@@ -113,14 +167,25 @@ NODES = {
     "docinfo": Table,
     "docinfo_item": None,
 
-    "admonition": None,
+    "admonition": admonition,
+    "note": admonition,
+    "tip": admonition,
+    "note": admonition,
+    "hint": admonition,
+    "attention": admonition,
+    "caution": admonition,
+    "important": admonition,
+    "warning": admonition,
+    "error": admonition,
+    "danger": admonition,
+
     "attribution": (P, "attribution"),
     "block_quote": Blockquote,
     "bullet_list": Ul,
     "caption": Caption,
     "citation": Cite,
     "citation_reference": None,
-    "classifier": Span,
+    "classifier": classifier,
     "colspec": None,
     "comment": Comment,
     "compound": None,
@@ -128,24 +193,24 @@ NODES = {
     "decoration": None,
     "definition": Dd,
     "definition_list": Dl,
-    "definition_list_item": None,
-    "description": None,
-    "doctest_block": None,
+    "definition_list_item": skip,
+    "description": Td,
+    "doctest_block": Pre,
     "document": None,
     "emphasis": Em,
-    "entry": None,
+    "entry": Td,
     "enumerated_list": Ol,
-    "field": None,
-    "field_body": None,
-    "field_list": None,
-    "field_name": None,
+    "field": Tr,
+    "field_body": Td,
+    "field_list": Table,
+    "field_name": Th,
     "figure": None,
     "footer": Footer,
-    "footnote": (Div, "footnote"),
+    "footnote": None,
     "footnote_reference": None,
-    "generated": None,
+    "generated": skip,
     "header": Header,
-    "image": None,
+    "image": Img,
     "inline": Span,
     "label": None,
     "legend": None,
@@ -153,21 +218,21 @@ NODES = {
     "line_block": None,
     "list_item": Li,
     "literal": (Span, "pre"),
-    "literal_block": Pre,
+    "literal_block": (Pre, "literal-block"),
     "math": None,
     "math_block": None,
     "meta": Meta,
-    "option": (Span, "option"),
+    "option": (P, "option"),
     "option_argument": Var,
-    "option_group": None,
-    "option_list": None,
-    "option_list_item": None,
-    "option_string": None,
+    "option_group": Td,
+    "option_list": (Table, "option-list"),
+    "option_list_item": Tr,
+    "option_string": skip,
     "paragraph": P,
     "problematic": None,
     "raw": None,
     "reference": None,
-    "row": None,
+    "row": Tr,
     "rubric": None,
     "section": None,
     "sidebar": Aside,
@@ -175,15 +240,15 @@ NODES = {
     "subscript": Sub,
     "substitution_definition": None,
     "substitution_reference": None,
-    "subtitle": Sub,
+    "subtitle": H2,
     "superscript": Sup,
     "system_message": None,
-    "table": None,
+    "table": Table,
     "target": None,
-    "tbody": None,
-    "term": None,
-    "tgroup": None,
-    "thead": None,
+    "tbody": Tbody,
+    "term": Dt,
+    "tgroup": Colgroup,
+    "thead": Thead,
     "title": H1,
     "title_reference": None,
     "topic": None,
@@ -206,13 +271,16 @@ class HTMLTranslator(nodes.NodeVisitor):
         return Style(content, type="text/css")
 
     def astext(self):
-        return Html(
+        tree = Html(
             Head(
                 Title("document"),
-                self.css("html5css3/html5css3.css")
+                self.css("html5css3/bootstrap.css"),
+                self.css("html5css3/rst2html5.css")
             ),
             self.root
-        ).format(0, self.indent)
+        )
+
+        return tree.format(0, self.indent)
 
     def pop_parent(self, node):
         self.current = self.parents.pop()
@@ -245,8 +313,101 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.current.append(tag)
         self.current = tag
 
+    def visit_footnote_reference(self, node):
+        href = '#' + node['refid']
+        tag = A(class_="footnote-reference", href=href)
+
+        self.parents.append(self.current)
+        self.current.append(Sup(tag))
+        self.current = tag
+
+    def visit_author(self, node):
+        if isinstance(self.current, Ul):
+            tag = Li(class_="author")
+            self.current.append(tag)
+        else:
+            tag = docinfo_item(node, self)
+
+        self.parents.append(self.current)
+        self.current = tag
+
+    def visit_image(self, node):
+        atts = {}
+        uri = node['uri']
+        # place SVG and SWF images in an <object> element
+        types = {
+            '.svg': 'image/svg+xml',
+            '.swf': 'application/x-shockwave-flash'
+        }
+
+        ext = os.path.splitext(uri)[1].lower()
+
+        if ext in ('.svg', '.swf'):
+            atts['data'] = uri
+            atts['type'] = types[ext]
+        else:
+            atts['src'] = uri
+            atts['alt'] = node.get('alt', uri)
+        # image size
+        if 'width' in node:
+            atts['width'] = node['width']
+        if 'height' in node:
+            atts['height'] = node['height']
+        if 'scale' in node:
+            if Image and not ('width' in node and 'height' in node):
+                try:
+                    im = Image.open(str(uri))
+                except (IOError, # Source image can't be found or opened
+                        UnicodeError):  # PIL doesn't like Unicode paths.
+                    pass
+                else:
+                    if 'width' not in atts:
+                        atts['width'] = str(im.size[0])
+                    if 'height' not in atts:
+                        atts['height'] = str(im.size[1])
+                    del im
+            for att_name in 'width', 'height':
+                if att_name in atts:
+                    match = re.match(r'([0-9.]+)(\S*)$', atts[att_name])
+                    assert match
+                    atts[att_name] = '%s%s' % (
+                        float(match.group(1)) * (float(node['scale']) / 100),
+                        match.group(2))
+        style = []
+        for att_name in 'width', 'height':
+            if att_name in atts:
+                if re.match(r'^[0-9.]+$', atts[att_name]):
+                    # Interpret unitless values as pixels.
+                    atts[att_name] += 'px'
+                style.append('%s: %s;' % (att_name, atts[att_name]))
+                del atts[att_name]
+        if style:
+            atts['style'] = ' '.join(style)
+        if (isinstance(node.parent, nodes.TextElement) or
+            (isinstance(node.parent, nodes.reference) and
+             not isinstance(node.parent.parent, nodes.TextElement))):
+            # Inline context or surrounded by <a>...</a>.
+            suffix = ''
+        else:
+            suffix = '\n'
+        if 'align' in node:
+            atts['class'] = 'align-%s' % node['align']
+
+        if ext in ('.svg', '.swf'): # place in an object element,
+            tag = Object(node.get('alt', uri))
+        else:
+            tag = Img()
+
+        tag.attrib.update(atts)
+
+        self.parents.append(self.current)
+        self.current.append(Sup(tag))
+        self.current = tag
+
     def unknown_visit(self, node):
-        handler = NODES.get(node.tagname, None)
+        nodename = node.__class__.__name__
+
+        handler = NODES.get(nodename, None)
         handled_elsewhere = False
 
         if isinstance(handler, tuple):
@@ -258,7 +419,7 @@ class HTMLTranslator(nodes.NodeVisitor):
             new_current = handler(node, self)
             handled_elsewhere = True
         else:
-            new_current = Div(class_=node.tagname)
+            new_current = Div(class_=nodename)
 
         self.parents.append(self.current)
 
@@ -270,46 +431,3 @@ class HTMLTranslator(nodes.NodeVisitor):
     unknown_departure = pop_parent
     depart_reference = pop_parent
 
-class SimpleListChecker(nodes.GenericNodeVisitor):
-
-    """
-    Raise `nodes.NodeFound` if non-simple list item is encountered.
-
-    Here "simple" means a list item containing nothing other than a single
-    paragraph, a simple list, or a paragraph followed by a simple list.
-    """
-
-    def default_visit(self, node):
-        raise nodes.NodeFound
-
-    def visit_bullet_list(self, node):
-        pass
-
-    def visit_enumerated_list(self, node):
-        pass
-
-    def visit_list_item(self, node):
-        children = []
-        for child in node.children:
-            if not isinstance(child, nodes.Invisible):
-                children.append(child)
-        if (children and isinstance(children[0], nodes.paragraph)
-            and (isinstance(children[-1], nodes.bullet_list)
-                 or isinstance(children[-1], nodes.enumerated_list))):
-            children.pop()
-        if len(children) <= 1:
-            return
-        else:
-            raise nodes.NodeFound
-
-    def visit_paragraph(self, node):
-        raise nodes.SkipNode
-
-    def invisible_visit(self, node):
-        """Invisible nodes should be ignored."""
-        raise nodes.SkipNode
-
-    visit_comment = invisible_visit
-    visit_substitution_definition = invisible_visit
-    visit_target = invisible_visit
-    visit_pending = invisible_visit
