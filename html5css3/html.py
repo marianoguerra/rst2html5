@@ -173,7 +173,7 @@ TAGS = {
     "label": (True, True, False, "Defines a label for a form control"),
     "legend": (True, False, False, "Defines a title in a fieldset"),
     "li": (True, False, False, "Defines a list item"),
-    "link": (True, False, False, "Defines a resource reference"),
+    "link": (True, False, True, "Defines a resource reference"),
     "map": (True, False, False, "Defines an image map "),
     "mark": (True, False, False, "Defines marked text"),
     "menu": (True, False, False, "Defines a menu list"),

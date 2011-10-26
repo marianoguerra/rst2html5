@@ -69,6 +69,56 @@ from docutils.transforms import writer_aux
 
 class Writer(writers.Writer):
 
+    default_stylesheet = 'rst2html5.css'
+
+    default_stylesheet_path = utils.relative_path(
+        os.path.join(os.getcwd(), 'dummy'),
+        os.path.join(os.path.dirname(__file__), default_stylesheet))
+
+    settings_spec = (
+        'HTML-Specific Options',
+        None,
+        (('Specify comma separated list of stylesheet URLs. '
+          'Overrides previous --stylesheet and --stylesheet-path settings.',
+          ['--stylesheet'],
+          {'metavar': '<URL>', 'overrides': 'stylesheet_path'}),
+         ('Specify comma separated list of stylesheet paths. '
+          'With --link-stylesheet, '
+          'the path is rewritten relative to the output HTML file. '
+          'Default: "%s"' % default_stylesheet_path,
+          ['--stylesheet-path'],
+          {'metavar': '<file>', 'overrides': 'stylesheet',
+           'default': default_stylesheet_path}),
+         ('Embed the stylesheet(s) in the output HTML file.  The stylesheet '
+          'files must be accessible during processing. This is the default.',
+          ['--embed-stylesheet'],
+          {'default': 1, 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Link to the stylesheet(s) in the output HTML file. '
+          'Default: embed stylesheets.',
+          ['--link-stylesheet'],
+          {'dest': 'embed_stylesheet', 'action': 'store_false'}),
+         ('Specify the initial header level.  Default is 1 for "<h1>".  '
+          'Does not affect document title & subtitle (see --no-doc-title).',
+          ['--initial-header-level'],
+          {'choices': '1 2 3 4 5 6'.split(), 'default': '1',
+           'metavar': '<level>'}),
+         ('Pretty print code.',
+          ['--pretty-print-code'],
+          {'dest': 'pretty_print_code', 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Don\'t Pretty print code.',
+          ['--dont-pretty-print-code'],
+          {'default': 1, 'action': 'store_false',
+           'validator': frontend.validate_boolean}),
+         ('Format for footnote references: one of "superscript" or '
+          '"brackets".  Default is "brackets".',
+          ['--footnote-references'],
+          {'choices': ['superscript', 'brackets'], 'default': 'brackets',
+           'metavar': '<format>',
+           'overrides': 'trim_footnote_reference_space'}),
+         ))
+
     settings_defaults = {
         'output_encoding_error_handler': 'xmlcharrefreplace'
     }
@@ -250,7 +300,6 @@ NODES = {
     "subscript": Sub,
     "substitution_definition": swallow_childs,
     "substitution_reference": None,
-    "subtitle": H2,
     "superscript": Sup,
     "table": Table,
     "tbody": Tbody,
@@ -260,11 +309,13 @@ NODES = {
     "title_reference": Cite,
     "transition": Hr,
 
+    # handled in visit_*
     "entry": None,
     "Text": None,
     "topic": None,
     "section": None,
     "title": None,
+    "subtitle": None,
     "target": None,
     "system_message": None,
     "enumerated_list": None,
@@ -277,21 +328,34 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.indent = 1
         self.parents = []
         self.current = self.root
-        self.head =  Head(
+        self.settings = document.settings
+
+        self.title_level = int(self.settings.initial_header_level)
+        lcode = document.settings.language_code
+        self.language = languages.get_language(lcode, document.reporter)
+
+        # make settings for this
+        self.content_type = self.settings.output_encoding
+
+        self.head = Head(
+            Meta(charset=self.content_type),
             Title("document"),
             self.css("html5css3/bootstrap.css"),
             self.css("html5css3/rst2html5.css"),
             self.css("html5css3/prettify.css")
         )
 
-        self.title_level = 1
+        styles = utils.get_stylesheet_list(self.settings)
 
-        lcode = document.settings.language_code
-        self.language = languages.get_language(lcode, document.reporter)
+        for style in styles:
+            self.head.append(self.css(style))
 
     def css(self, path):
-        content = open(path).read()
-        return Style(content, type="text/css")
+        if self.settings.embed_stylesheet:
+            content = open(path).read()
+            return Style(content, type="text/css")
+        else:
+            return Link(href=path, rel="stylesheet", type_="text/css")
 
     def js(self, path):
         content = open(path).read().decode('utf-8')
@@ -299,8 +363,11 @@ class HTMLTranslator(nodes.NodeVisitor):
 
     def astext(self):
         self.root.append(self.js("html5css3/jquery-1.6.4.min.js"))
-        self.root.append(self.js("html5css3/prettify.js"))
-        self.root.append(Script("$(function () { prettyPrint() })"))
+
+        if self.settings.pretty_print_code:
+            self.root.append(self.js("html5css3/prettify.js"))
+            self.root.append(Script("$(function () { prettyPrint() })"))
+
         tree = Html(self.head, self.root)
 
         return tree.format(0, self.indent)
@@ -388,8 +455,8 @@ class HTMLTranslator(nodes.NodeVisitor):
     def depart_Text(self, node):
         pass
 
-    def visit_title(self, node):
-        heading = HEADINGS.get(self.title_level, H6)()
+    def visit_title(self, node, sub=0):
+        heading = HEADINGS.get(self.title_level + sub, H6)()
         current = heading
         insert_current = True
 
@@ -400,6 +467,9 @@ class HTMLTranslator(nodes.NodeVisitor):
             self._append(heading, node)
 
         self._stack(current, node, insert_current)
+
+    def visit_subtitle(self, node):
+        self.visit_title(node, 1)
 
     def visit_topic(self, node):
         self.title_level += 1
@@ -416,7 +486,7 @@ class HTMLTranslator(nodes.NodeVisitor):
     depart_section = depart_topic
 
     def visit_document(self, node):
-        self.head[0][0] = node.get('title', 'document')
+        self.head[1][0] = node.get('title', 'document')
 
     def depart_document(self, node):
         pass
