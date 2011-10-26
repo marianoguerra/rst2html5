@@ -27,7 +27,7 @@ aside{
  margin-right: 0;
 }
 
-.footnote, cite{
+.footnote, .cite{
  width: 98%;
  display: table;
  border: 1px solid #ddd;
@@ -35,7 +35,7 @@ aside{
  margin: 0.5%;
 }
 
-.footnote .du-label, cite .du-label{
+.footnote .du-label, .cite .du-label{
  float: left;
  height: 100%;
  width: 5%;
@@ -52,4 +52,24 @@ th, th p{
 
 .field-label{
  font-weight: bold;
+}
+
+ol.arabic{
+ list-style-type: decimal;
+}
+
+ol.loweralpha{
+ list-style-type: lower-alpha;
+}
+
+ol.upperalpha{
+ list-style-type: upper-alpha;
+}
+
+ol.lowerroman{
+ list-style-type: lower-roman;
+}
+
+ol.upperroman{
+ list-style-type: upper-roman;
 }

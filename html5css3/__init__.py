@@ -7,8 +7,6 @@ Simple HyperText Markup Language document tree Writer.
 
 The output conforms to the HTML version 5
 
-The css "html5css3.css" is required
-
 The css is based on twitter bootstrap:
 http://twitter.github.com/bootstrap/
 
@@ -164,7 +162,6 @@ def swallow_childs(node, translator):
     return Span(class_="remove-me")
 
 NODES = {
-    "Text": None,
     "abbreviation": Abbr,
     "acronym": Abbr,
 
@@ -199,7 +196,7 @@ NODES = {
     "block_quote": Blockquote,
     "bullet_list": Ul,
     "caption": Caption,
-    "citation": Cite,
+    "citation": (Div, "cite"),
     "citation_reference": None,
     "classifier": classifier,
     "colspec": skip,
@@ -214,8 +211,6 @@ NODES = {
     "doctest_block": (Pre, "prettyprint"),
     "document": None,
     "emphasis": Em,
-    "entry": None,
-    "enumerated_list": Ol,
     "field": Tr,
     "field_body": Td,
     "field_list": Table,
@@ -250,7 +245,6 @@ NODES = {
     "reference": None,
     "row": Tr,
     "rubric": None,
-    "section": None,
     "sidebar": Aside,
     "strong": Strong,
     "subscript": Sub,
@@ -258,17 +252,22 @@ NODES = {
     "substitution_reference": None,
     "subtitle": H2,
     "superscript": Sup,
-    "system_message": None,
     "table": Table,
-    "target": None,
     "tbody": Tbody,
     "term": Dt,
     "tgroup": Colgroup,
     "thead": Thead,
-    "title": None,
     "title_reference": Cite,
+    "transition": Hr,
+
+    "entry": None,
+    "Text": None,
     "topic": None,
-    "transition": None
+    "section": None,
+    "title": None,
+    "target": None,
+    "system_message": None,
+    "enumerated_list": None,
 }
 
 class HTMLTranslator(nodes.NodeVisitor):
@@ -364,7 +363,7 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.current = self.parents.pop()
 
     def visit_Text(self, node):
-        self._append(node.astext(), node)
+        self._append(unicode(node.astext()), node)
 
     def visit_entry(self, node):
         atts = {}
@@ -452,7 +451,6 @@ class HTMLTranslator(nodes.NodeVisitor):
         self._stack(tag, node)
 
     def visit_target(self, node):
-        #if not ('refuri' in node or 'refid' in node or 'refname' in node):
         self._stack(Span(class_="target"), node)
 
     def visit_author(self, node):
@@ -464,6 +462,51 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         self.parents.append(self.current)
         self.current = tag
+
+    def visit_enumerated_list(self, node):
+        atts = {}
+
+        if 'start' in node:
+            atts['start'] = node['start']
+
+        if 'enumtype' in node:
+            atts['class'] = node['enumtype']
+
+        self._stack(Ol(**atts), node)
+
+    def visit_system_message(self, node):
+        msg_type = node['type']
+        cont = Div(class_='alert-message block-message system-message ' +
+                msg_type.lower())
+        text = P("System Message: %s/%s" % (msg_type, node['level']),
+            class_='system-message-title admonition-title')
+
+        cont.append(text)
+
+        backlinks = ''
+
+        if len(node['backrefs']):
+            backrefs = node['backrefs']
+
+            if len(backrefs) == 1:
+                backlinks = Em(A("backlink", href="#" +  backrefs[0]))
+            else:
+                backlinks = Div(P("backlinks"), class_="backrefs")
+
+                for (i, backref) in enumerate(backrefs):
+                    backlinks.append(A(str(i), href="#" +  backref))
+                    backlinks.append(" ")
+
+        if node.hasattr('line'):
+            line = 'line %s ' % node['line']
+        else:
+            line = ' '
+
+        cont.append(Span(quote(node['source']), class_="literal"))
+        cont.append(line)
+        cont.append(backlinks)
+
+        self._stack(cont, node)
 
     def visit_image(self, node):
         atts = {}
