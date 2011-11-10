@@ -30,42 +30,9 @@ except ImportError:
 
 import docutils
 
-from docutils import frontend, nodes, utils, writers, languages, io
-
-from docutils.math import unimathsymbols2tex
+from docutils import frontend, nodes, utils, writers, languages
 
 from html import *
-
-try:
-    from docutils.math import pick_math_environment
-except ImportError:
-    def pick_math_environment(code, numbered=False):
-        """Return the right math environment to display `code`.
-
-        The test simply looks for line-breaks (``\\``) outside environments.
-        Multi-line formulae are set with ``align``, one-liners with
-        ``equation``.
-
-        If `numbered` evaluates to ``False``, the "starred" versions are used
-        to suppress numbering.
-        """
-        # cut out environment content:
-        chunks = code.split(r'\begin{')
-        toplevel_code = ''.join([chunk.split(r'\end{')[-1]
-                                 for chunk in chunks])
-        if toplevel_code.find(r'\\') >= 0:
-            env = 'align'
-        else:
-            env = 'equation'
-        if not numbered:
-            env += '*'
-        return env
-
-from docutils.math.latex2mathml import parse_latex_math
-from docutils.math.math2html import math2html
-
-from docutils.transforms import writer_aux
-
 
 class Writer(writers.Writer):
 
@@ -332,7 +299,7 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         self.title_level = int(self.settings.initial_header_level)
         lcode = document.settings.language_code
-        self.language = languages.get_language(lcode, document.reporter)
+        self.language = languages.get_language(lcode) #, document.reporter)
 
         # make settings for this
         self.content_type = self.settings.output_encoding
