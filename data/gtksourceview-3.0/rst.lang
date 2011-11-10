@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ Author: Mariano Guerra
+ Copyright (C) 2011 Mariano Guerra <luismarianoguerra@gmail.com>
+
+ GtkSourceView is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+
+ GtkSourceView is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+-->
+<!-- Note: this language definition file adds support for restructured text 
+     syntax, described in the following website:
+     * <http://docutils.sourceforge.net/docs/user/rst/quickref.html> -->
+<language id="rst" _name="rst" version="2.0" _section="Markup">
+  <metadata>
+    <property name="mimetypes">text/x-rst</property>
+    <property name="globs">*.rst;*.rest</property>
+    <property name="block-comment-start">&lt;!--</property>
+    <property name="block-comment-end">--&gt;</property>
+  </metadata>
+
+  <styles>
+    <style id="header" _name="Header" map-to="def:type"/>
+    <style id="list-marker" _name="List Marker" map-to="def:statement"/>
+    <style id="code" _name="Code" map-to="def:identifier"/>
+    <style id="blockquote-marker" _name="Blockquote Marker" map-to="def:shebang"/>
+    <style id="url" _name="URL" map-to="def:underlined"/>
+    <style id="link-text" _name="Link Text" map-to="def:comment"/>
+    <style id="label" _name="Label" map-to="def:preprocessor"/>
+    <style id="attribute-value" _name="Attribute Value" map-to="def:constant"/>
+    <style id="image-marker" _name="Image Marker" map-to="def:shebang"/>
+    <style id="emphasis" _name="Emphasis" map-to="def:doc-comment-element"/>
+    <style id="strong-emphasis" _name="Strong Emphasis" map-to="def:statement"/>
+    <style id="backslash-escape" _name="Backslash Escape" map-to="def:special-char"/>
+    <style id="line-break" _name="Line Break" map-to="def:note"/>
+  </styles>
+
+  <definitions>
+    <!-- Examples:
+         Header 1
+         ========
+         Header 2
+         -
+    -->
+    <!-- Note: line break can't be used in regex, so only underline is matched. -->
+    <context id="setext-header" style-ref="header">
+      <match>^(-+|=+)[ \t]*$</match>
+    </context>
+
+    <!-- Example (unordered list):
+         * Item
+         + Item
+         - Item
+
+         Example (ordered list):
+         1. Item
+         2. Item
+         3. Item
+
+	 # Item
+    -->
+    <context id="list" style-ref="list-marker">
+      <match extended="true">
+        ^[ ]{0,3}  # Maximum 3 spaces at the beginning of the line.
+        (
+          \*|\+|-|\#| # Asterisk, plus or hyphen for unordered list.
+          [0-9]+\. # Number followed by period for ordered list.
+        )
+        [ \t]+     # Must be followed by at least 1 space or 1 tab.
+      </match>
+    </context>
+
+    <!-- Example:
+                 <em>HTML code</em> displayed <strong>literally</strong>.
+    -->
+    <context id="code-block" class="no-spell-check">
+      <match>^( {4,}|\t{2,})([^ \t]+.*)</match>
+
+      <include>
+        <context sub-pattern="2" style-ref="code"/>
+      </include>
+    </context>
+
+    <!-- Example:
+         > Quoted text.
+         > Quoted text with `code span`.
+         >> Blockquote **nested**.
+    -->
+    <!-- Note: blockquote can contain block-level and inline Markdown elements,
+         but the current language file only highlights inline ones (emphasis,
+         link, etc.). -->
+    <context id="blockquote" end-at-line-end="true">
+      <start>^( {0,3}&gt;(?=.)( {0,4}&gt;)*)</start>
+
+      <include>
+        <context sub-pattern="1" where="start" style-ref="blockquote-marker"/>
+        <context ref="automatic-link"/>
+        <context ref="substitution"/>
+        <context ref="asterisks-emphasis"/>
+        <context ref="asterisks-strong-emphasis"/>
+        <context ref="backslash-escape"/>
+      </include>
+    </context>
+
+    <context id="directive">
+      <start>(^\.\. .*::)</start>
+      <end>$</end>
+
+      <include>
+        <context sub-pattern="1" where="start" style-ref="blockquote-marker"/>
+        <context ref="automatic-link"/>
+        <context ref="substitution"/>
+        <context ref="asterisks-emphasis"/>
+        <context ref="asterisks-strong-emphasis"/>
+        <context ref="backslash-escape"/>
+      </include>
+    </context>
+
+    <context id="sourcecode" style-ref="code">
+      <start>^::\n\n</start>
+      <end>\n\n</end>
+    </context>
+
+    <!-- Examples:
+         <user@example.com>
+         <http://www.example.com/>
+    -->
+    <!-- Note: regular expressions are based from function `_DoAutoLinks` from
+         Markdown.pl (see <http://daringfireball.net/projects/markdown/>). -->
+    <context id="automatic-link" class="no-spell-check">
+      <match case-sensitive="false" extended="true">
+          (((mailto:)?[a-z0-9.-]+\@[-a-z0-9]+(\.[-a-z0-9]+)*\.[a-z]+) | # E-mail.
+          ((https?|ftp):[^'">\s]+))                                     # URL.
+      </match>
+
+      <include>
+        <context sub-pattern="1" style-ref="url"/>
+      </include>
+    </context>
+
+    <!-- Examples:
+         Lorem *ipsum dolor* sit amet.
+         Here's an *emphasized text containing an asterisk (\*)*.
+    -->
+    <context id="asterisks-emphasis" style-ref="emphasis">
+      <match>(?&lt;!\*)\*[^\* \t].*?(?&lt;!\\|\*| |\t)\*(?!\*)</match>
+    </context>
+
+    <!-- Examples:
+         Lorem **ipsum dolor** sit amet.
+         Here's a **strongly emphasized text containing an asterisk (\*).**
+    -->
+    <context id="asterisks-strong-emphasis" style-ref="strong-emphasis">
+      <match>\*\*[^\* \t].*?(?&lt;!\\|\*| |\t)\*\*</match>
+    </context>
+
+    <context id="substitution" style-ref="label">
+      <match>\|.+?\|</match>
+    </context>
+
+    <context id="backslash-escape" style-ref="backslash-escape">
+      <match>\\[\\`*_{}\[\]()#+-.!]</match>
+    </context>
+
+    <context id="rst-syntax">
+      <include>
+        <context ref="setext-header"/>
+        <context ref="list"/>
+        <context ref="code-block"/>
+        <context ref="blockquote"/>
+        <context ref="directive"/>
+        <context ref="automatic-link"/>
+        <context ref="substitution"/>
+        <context ref="asterisks-emphasis"/>
+        <context ref="asterisks-strong-emphasis"/>
+        <context ref="backslash-escape"/>
+      </include>
+    </context>
+
+    <replace id="html:embedded-lang-hook" ref="rst-syntax"/>
+
+    <context id="rst">
+      <include>
+        <context ref="rst-syntax"/>
+        <!-- Note: even if it's highlighted, Markdown syntax within HTML blocks
+             (e.g., `<div>`) is not processed. -->
+        <context ref="html:html"/>
+      </include>
+    </context>
+  </definitions>
+</language>
