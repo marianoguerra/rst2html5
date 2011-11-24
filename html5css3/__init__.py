@@ -299,7 +299,11 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         self.title_level = int(self.settings.initial_header_level)
         lcode = document.settings.language_code
-        self.language = languages.get_language(lcode) #, document.reporter)
+
+        try:
+            self.language = languages.get_language(lcode)
+        except TypeError:
+            self.language = languages.get_language(lcode, document.reporter)
 
         # make settings for this
         self.content_type = self.settings.output_encoding
