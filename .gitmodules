@@ -1,0 +1,3 @@
+[submodule "thirdparty/deckjs"]
+	path = thirdparty/deckjs
+	url = https://github.com/imakewebthings/deck.js

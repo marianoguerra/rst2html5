@@ -333,7 +333,7 @@ class HTMLTranslator(nodes.NodeVisitor):
         return Script(content)
 
     def astext(self):
-        self.root.append(self.js("html5css3/jquery-1.6.4.min.js"))
+        self.root.append(self.js("html5css3/jquery-1.7.1.min.js"))
 
         if self.settings.pretty_print_code:
             self.root.append(self.js("html5css3/prettify.js"))
