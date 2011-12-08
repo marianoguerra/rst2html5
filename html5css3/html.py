@@ -24,12 +24,30 @@ class TagBase(ET.Element):
         "add childs and call parent constructor"
         clean_attrs = dict([(key.rstrip("_"), val)
             for (key, val) in attrs.iteritems()])
+
         tag = self.__class__.__name__.lower()
 
         ET.Element.__init__(self, tag, clean_attrs)
 
         for child in childs:
-            self.append(child)
+            if isinstance(child, basestring):
+                if self.text is None:
+                    self.text = unicode(child)
+                else:
+                    self.text += unicode(child)
+            else:
+                self.append(child)
+
+    def append(self, element):
+        '''override ET.Element.append to support appending strings'''
+
+        if isinstance(element, basestring):
+            if self.text is None:
+                self.text = element
+            else:
+                self.text += element
+        else:
+            ET.Element.append(self, element)
 
     def _format_child(self, child, level=0, increment=1, be_compact=False):
         """transform childs to string representations"""
@@ -74,9 +92,14 @@ class TagBase(ET.Element):
 
         attrs = " ".join(['%s="%s"' % (name, val)
             for (name, val) in self.attrib.iteritems()])
+
         if attrs:
             attrs = " " + attrs
 
+        if self.text is None:
+            childs = ""
+        else:
+            childs = self.text
 
         should_be_compact = False
         formatted = []
@@ -85,7 +108,7 @@ class TagBase(ET.Element):
             formatted.append(item)
             should_be_compact = isinstance(child, basestring)
 
-        childs = "".join(formatted)
+        childs += "".join(formatted)
 
         if childs:
             childs = nl + childs + nl
@@ -100,6 +123,27 @@ class TagBase(ET.Element):
         else:
             return "%s<%s%s>%s%s</%s>" % (indent, self.tag, attrs,
                     childs, indent, self.tag)
+
+    def to_string(self, level=0):
+        indent = " " * level
+        attrs = " ".join(['%s="%s"' % (name, val)
+            for (name, val) in self.attrib.iteritems()])
+
+        accum = []
+
+        for child in self:
+            if hasattr(child, "to_string"):
+                accum.append(child.to_string(level + 1))
+            else:
+                print "not a tag", child
+
+        childs = "".join(accum)
+
+        return "%s%s(%s) = %s\n%s" % (indent, self.tag, attrs, self.text,
+            childs)
+
+    def __repr__(self):
+        self.to_string(0)
 
     def __str__(self):
         "return a string representation"

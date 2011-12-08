@@ -33,6 +33,8 @@ import docutils
 from docutils import frontend, nodes, utils, writers, languages
 
 from html import *
+# import default post processors so they register
+import postprocessors
 
 class Writer(writers.Writer):
 
@@ -45,7 +47,7 @@ class Writer(writers.Writer):
     settings_spec = (
         'HTML-Specific Options',
         None,
-        (('Specify comma separated list of stylesheet URLs. '
+        [('Specify comma separated list of stylesheet URLs. '
           'Overrides previous --stylesheet and --stylesheet-path settings.',
           ['--stylesheet'],
           {'metavar': '<URL>', 'overrides': 'stylesheet_path'}),
@@ -70,34 +72,55 @@ class Writer(writers.Writer):
           ['--initial-header-level'],
           {'choices': '1 2 3 4 5 6'.split(), 'default': '1',
            'metavar': '<level>'}),
-         ('Pretty print code.',
-          ['--pretty-print-code'],
-          {'dest': 'pretty_print_code', 'action': 'store_true',
-           'validator': frontend.validate_boolean}),
-         ('Don\'t Pretty print code.',
-          ['--dont-pretty-print-code'],
-          {'default': 1, 'action': 'store_false',
-           'validator': frontend.validate_boolean}),
          ('Format for footnote references: one of "superscript" or '
           '"brackets".  Default is "brackets".',
           ['--footnote-references'],
           {'choices': ['superscript', 'brackets'], 'default': 'brackets',
            'metavar': '<format>',
-           'overrides': 'trim_footnote_reference_space'}),
-         ))
+           'overrides': 'trim_footnote_reference_space'})
+         ])
 
     settings_defaults = {
         'output_encoding_error_handler': 'xmlcharrefreplace'
     }
 
+    post_processors = {}
+
     def __init__(self):
         writers.Writer.__init__(self)
         self.translator_class = HTMLTranslator
 
+    @classmethod
+    def add_postprocessor(cls, name, opt_name, processor):
+        opt_switch = '--' + opt_name.replace("_", "-")
+
+        cls.settings_spec[2].append((name, [opt_switch], {
+                'dest': opt_name,
+                'action': 'store_true',
+                'validator': frontend.validate_boolean
+            }
+        ))
+
+        cls.post_processors[opt_name] = processor
+
     def translate(self):
-        self.visitor = visitor = self.translator_class(self.document)
+        visitor = self.translator_class(self.document)
         self.document.walkabout(visitor)
+        tree = visitor.get_tree()
+
+        settings = self.document.settings
+        # TODO: add option
+        embed = True
+
+        for (key, processor) in Writer.post_processors.iteritems():
+            if getattr(settings, key):
+                processor(tree, embed)
+
         self.output = visitor.astext()
+
+for (key, data) in postprocessors.PROCESSORS.iteritems():
+    Writer.add_postprocessor(data["name"], key, data["processor"])
+
 
 def docinfo_address(node, translator):
     return docinfo_item(node, translator, lambda: Pre(class_="address"))
@@ -310,11 +333,7 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         self.head = Head(
             Meta(charset=self.content_type),
-            Title("document"),
-            self.css("html5css3/bootstrap.css"),
-            self.css("html5css3/rst2html5.css"),
-            self.css("html5css3/prettify.css")
-        )
+            Title("document"))
 
         styles = utils.get_stylesheet_list(self.settings)
 
@@ -332,16 +351,11 @@ class HTMLTranslator(nodes.NodeVisitor):
         content = open(path).read().decode('utf-8')
         return Script(content)
 
+    def get_tree(self):
+        return Html(self.head, self.root)
+
     def astext(self):
-        self.root.append(self.js("html5css3/jquery-1.7.1.min.js"))
-
-        if self.settings.pretty_print_code:
-            self.root.append(self.js("html5css3/prettify.js"))
-            self.root.append(Script("$(function () { prettyPrint() })"))
-
-        tree = Html(self.head, self.root)
-
-        return tree.format(0, self.indent)
+        return self.get_tree().format(0, self.indent)
 
     def _stack(self, tag, node, append_tag=True):
         self.parents.append(self.current)
@@ -457,7 +471,8 @@ class HTMLTranslator(nodes.NodeVisitor):
     depart_section = depart_topic
 
     def visit_document(self, node):
-        self.head[1][0] = node.get('title', 'document')
+        #self.head[1].text = node.get('title', 'document')
+        pass
 
     def depart_document(self, node):
         pass
