@@ -120,13 +120,26 @@ the source code of this presentation
     some code
     ---------
 
-    .. class:: prettyprint
+    .. class:: prettyprint lang-python
 
     ::
 
         import antigravity
         the_anwser = 42
 
+    .. class:: prettyprint lang-html
+
+    ::
+
+        <html>
+         <head>
+          <title>hi</title>
+         </head>
+
+         <body>
+          <h1>hi!</h1>
+         </body>
+        </html>
 
     some quote
     ----------
@@ -136,7 +149,9 @@ the source code of this presentation
     status
     ======
 
-    * works, needs some battle testing
+    * works [*]_
+
+    .. [*] needs some battle testing
 
     future
     ======
@@ -150,4 +165,4 @@ the source code of this presentation
     contribute
     ==========
 
-    * http://github.com/marianoguerra/rst2html5
+    *
