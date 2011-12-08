@@ -32,9 +32,9 @@ class TagBase(ET.Element):
         for child in childs:
             if isinstance(child, basestring):
                 if self.text is None:
-                    self.text = unicode(child)
+                    self.text = quote(unicode(child))
                 else:
-                    self.text += unicode(child)
+                    self.text += quote(unicode(child))
             else:
                 self.append(child)
 
@@ -43,9 +43,9 @@ class TagBase(ET.Element):
 
         if isinstance(element, basestring):
             if self.text is None:
-                self.text = element
+                self.text = quote(element)
             else:
-                self.text += element
+                self.text += quote(element)
         else:
             ET.Element.append(self, element)
 

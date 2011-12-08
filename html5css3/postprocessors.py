@@ -6,16 +6,21 @@ from html import *
 
 def js(path, embed=True):
     content = open(path).read().decode('utf-8')
-    # TODO: handle non embeding
-    return Script(content)
+
+    if embed:
+        return Script(content)
+    else:
+        return Script(src=path)
 
 def css(path, embed=True):
     content = open(path).read().decode('utf-8')
-    # TODO: handle non embeding
-    return Style(content, type="text/css")
+
+    if embed:
+        return Style(content, type="text/css")
+    else:
+        return Link(href=path, rel="stylesheet", type="text/css")
 
 def pretty_print_code(tree, embed=True):
-    # TODO: make a query
     head = tree[0]
     body = tree[1]
 
@@ -79,8 +84,8 @@ def deckjs(tree, embed=True):
 def bootstrap_css(tree, embed=True):
     head = tree[0]
 
-    head.append(css("html5css3/bootstrap.css"))
-    head.append(css("html5css3/rst2html5.css"))
+    head.append(css("html5css3/bootstrap.css", embed))
+    head.append(css("html5css3/rst2html5.css", embed))
 
 PROCESSORS = {
     "jquery": {

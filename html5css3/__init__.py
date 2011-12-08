@@ -58,15 +58,15 @@ class Writer(writers.Writer):
           ['--stylesheet-path'],
           {'metavar': '<file>', 'overrides': 'stylesheet',
            'default': default_stylesheet_path}),
-         ('Embed the stylesheet(s) in the output HTML file.  The stylesheet '
+         ('Embed the content (css, js, etc) in the output HTML file.  The content '
           'files must be accessible during processing. This is the default.',
-          ['--embed-stylesheet'],
+          ['--embed-content'],
           {'default': 1, 'action': 'store_true',
            'validator': frontend.validate_boolean}),
-         ('Link to the stylesheet(s) in the output HTML file. '
-          'Default: embed stylesheets.',
-          ['--link-stylesheet'],
-          {'dest': 'embed_stylesheet', 'action': 'store_false'}),
+         ('Link to the content in the output HTML file. '
+          'Default: embed content.',
+          ['--link-content'],
+          {'dest': 'embed_content', 'action': 'store_false'}),
          ('Specify the initial header level.  Default is 1 for "<h1>".  '
           'Does not affect document title & subtitle (see --no-doc-title).',
           ['--initial-header-level'],
@@ -109,8 +109,7 @@ class Writer(writers.Writer):
         tree = visitor.get_tree()
 
         settings = self.document.settings
-        # TODO: add option
-        embed = True
+        embed = settings.embed_content
 
         for (key, processor) in Writer.post_processors.iteritems():
             if getattr(settings, key):
@@ -248,7 +247,7 @@ NODES = {
     "definition_list": Dl,
     "definition_list_item": skip,
     "description": Td,
-    "doctest_block": (Pre, "prettyprint"),
+    "doctest_block": (Pre, "prettyprint lang-python"),
     "document": None,
     "emphasis": Em,
     "field": Tr,
@@ -341,7 +340,7 @@ class HTMLTranslator(nodes.NodeVisitor):
             self.head.append(self.css(style))
 
     def css(self, path):
-        if self.settings.embed_stylesheet:
+        if self.settings.embed_content:
             content = open(path).read()
             return Style(content, type="text/css")
         else:
