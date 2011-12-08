@@ -13,6 +13,9 @@ def quote(text):
         ord('@'): u'&#64;',
         0xa0: u'&nbsp;'})
 
+def nop(text):
+    return text
+
 class TagBase(ET.Element):
     "base class for all tags"
 
@@ -32,20 +35,26 @@ class TagBase(ET.Element):
         for child in childs:
             if isinstance(child, basestring):
                 if self.text is None:
-                    self.text = quote(unicode(child))
+                    self.text = self.maybe_quote(unicode(child))
                 else:
-                    self.text += quote(unicode(child))
+                    self.text += self.maybe_quote(unicode(child))
             else:
                 self.append(child)
+
+    def maybe_quote(self, text):
+        if self.QUOTE:
+            return quote(text)
+        else:
+            return text
 
     def append(self, element):
         '''override ET.Element.append to support appending strings'''
 
         if isinstance(element, basestring):
             if self.text is None:
-                self.text = quote(element)
+                self.text = self.maybe_quote(element)
             else:
-                self.text += quote(element)
+                self.text += self.maybe_quote(element)
         else:
             ET.Element.append(self, element)
 
@@ -67,8 +76,7 @@ class TagBase(ET.Element):
         else:
             child = unicode(child)
 
-            if cls.QUOTE:
-                child = quote(child)
+            child = self.maybe_quote(child)
 
             result = child
             indent = ""
