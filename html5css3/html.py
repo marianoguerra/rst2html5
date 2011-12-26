@@ -2,6 +2,13 @@
 
 import xml.etree.ElementTree as ET
 
+if callable(ET.Element):
+    class Element(ET._ElementInterface, object):
+        pass
+else:
+    class Element(ET.Element):
+        pass
+
 def quote(text):
     """encode html entities"""
     text = unicode(text)
@@ -16,7 +23,7 @@ def quote(text):
 def nop(text):
     return text
 
-class TagBase(ET.Element):
+class TagBase(Element):
     "base class for all tags"
 
     SELF_CLOSING = False
@@ -30,7 +37,7 @@ class TagBase(ET.Element):
 
         tag = self.__class__.__name__.lower()
 
-        ET.Element.__init__(self, tag, clean_attrs)
+        Element.__init__(self, tag, clean_attrs)
 
         for child in childs:
             if isinstance(child, basestring):
@@ -48,7 +55,7 @@ class TagBase(ET.Element):
             return text
 
     def append(self, element):
-        '''override ET.Element.append to support appending strings'''
+        '''override Element.append to support appending strings'''
 
         if isinstance(element, basestring):
             if self.text is None:
@@ -56,7 +63,7 @@ class TagBase(ET.Element):
             else:
                 self.text += self.maybe_quote(element)
         else:
-            ET.Element.append(self, element)
+            Element.append(self, element)
 
     def _format_child(self, child, level=0, increment=1, be_compact=False):
         """transform childs to string representations"""
