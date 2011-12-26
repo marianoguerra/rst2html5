@@ -13,6 +13,6 @@ get it
 
 ::
 
-        https://github.com/marianoguerra/rst2html5.git
+        git clone https://github.com/marianoguerra/rst2html5.git
         cd rst2html5
         git submodule update --init
