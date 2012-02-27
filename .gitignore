@@ -1,4 +1,6 @@
 .*.swo
 .*.swp
 *.pyc
-
+build
+dist
+rst2html5.egg-info
