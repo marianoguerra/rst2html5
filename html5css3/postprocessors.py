@@ -1,37 +1,41 @@
 import os
 
 import html5css3
+import html
 
-from html import *
+BASE_PATH = os.path.dirname(__file__)
+
+def abspath(path):
+    return os.path.join(BASE_PATH, path)
 
 def js(path, embed=True):
-    content = open(path).read().decode('utf-8')
+    content = open(abspath(path)).read().decode('utf-8')
 
     if embed:
-        return Script(content)
+        return html.Script(content)
     else:
-        return Script(src=path)
+        return html.Script(src=path)
 
 def css(path, embed=True):
-    content = open(path).read().decode('utf-8')
+    content = open(abspath(path)).read().decode('utf-8')
 
     if embed:
-        return Style(content, type="text/css")
+        return html.Style(content, type="text/css")
     else:
-        return Link(href=path, rel="stylesheet", type="text/css")
+        return html.Link(href=path, rel="stylesheet", type="text/css")
 
 def pretty_print_code(tree, embed=True):
     head = tree[0]
     body = tree[1]
 
-    body.append(js("html5css3/prettify.js", embed))
-    body.append(Script("$(function () { prettyPrint() })"))
+    body.append(js("prettify.js", embed))
+    body.append(html.Script("$(function () { prettyPrint() })"))
 
-    head.append(css("html5css3/prettify.css"))
+    head.append(css("prettify.css"))
 
 def jquery(tree, embed=True):
     body = tree[1]
-    body.append(js("html5css3/jquery-1.7.1.min.js", embed))
+    body.append(js("jquery-1.7.1.min.js", embed))
 
 def deckjs(tree, embed=True):
     head = tree[0]
@@ -78,14 +82,14 @@ def deckjs(tree, embed=True):
     body.append(js(path("extensions", "status", "deck.status.js"), embed))
     body.append(js(path("extensions", "navigation", "deck.navigation.js"), embed))
 
-    body.append(Script("$(function () { $.deck('.slide'); });"))
+    body.append(html.Script("$(function () { $.deck('.slide'); });"))
 
 
 def bootstrap_css(tree, embed=True):
     head = tree[0]
 
-    head.append(css("html5css3/bootstrap.css", embed))
-    head.append(css("html5css3/rst2html5.css", embed))
+    head.append(css("bootstrap.css", embed))
+    head.append(css("rst2html5.css", embed))
 
 PROCESSORS = {
     "jquery": {
