@@ -84,6 +84,49 @@ def deckjs(tree, embed=True):
 
     body.append(html.Script("$(function () { $.deck('.slide'); });"))
 
+def revealjs(tree, embed=True):
+    head = tree[0]
+    body = tree[1]
+
+    def add_class(element, cls_name):
+        cls = element.get("class", "")
+
+        if cls:
+            cls += " " + cls_name
+        else:
+            cls += cls_name
+
+        element.set("class", cls)
+
+    def path(*args):
+        return os.path.join("thirdparty", "revealjs", *args)
+
+    # remove the default style
+    head.remove(head.find("./style"))
+    add_class(body, "reveal")
+    slides = html.Div(class_="slides")
+
+    for item in list(body):
+        body.remove(item)
+        slides.append(item)
+
+    body.append(slides)
+
+    # <link rel="stylesheet" href="css/reveal.css">
+    # <link rel="stylesheet" href="css/theme/default.css" id="theme">
+    head.append(css(path("css", "reveal.css"), embed))
+    head.append(css(path("css", "theme", "default.css"), embed))
+
+    # <!-- For syntax highlighting -->
+    # <link rel="stylesheet" href="lib/css/zenburn.css">
+    # head.append(css(path("lib", "css", "zenburn.css"), embed))
+
+    # <script src="lib/js/head.min.js"></script>
+    # <script src="js/reveal.min.js"></script>
+    body.append(js(path("lib", "js", "head.min.js"), embed))
+    body.append(js(path("js", "reveal.min.js"), embed))
+
+    body.append(html.Script("$(function () { Reveal.initialize({history:true}); });"))
 
 def bootstrap_css(tree, embed=True):
     head = tree[0]
@@ -103,6 +146,10 @@ PROCESSORS = {
     "deck_js": {
         "name": "deck.js",
         "processor": deckjs
+    },
+    "reveal_js": {
+        "name": "reveal.js",
+        "processor": revealjs
     },
     "bootstrap_css": {
         "name": "bootstrap css",
