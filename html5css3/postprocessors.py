@@ -5,8 +5,10 @@ import html
 
 BASE_PATH = os.path.dirname(__file__)
 
+join_path = os.path.join
+
 def abspath(path):
-    return os.path.join(BASE_PATH, "..", path)
+    return join_path(BASE_PATH, "..", path)
 
 def js(path, embed=True):
     content = open(abspath(path)).read().decode('utf-8')
@@ -28,14 +30,14 @@ def pretty_print_code(tree, embed=True):
     head = tree[0]
     body = tree[1]
 
-    body.append(js("prettify.js", embed))
+    body.append(js(join_path("thirdparty", "prettify.js"), embed))
     body.append(html.Script("$(function () { prettyPrint() })"))
 
-    head.append(css("prettify.css"))
+    head.append(css(join_path("thirdparty", "prettify.css")))
 
 def jquery(tree, embed=True):
     body = tree[1]
-    body.append(js("jquery.js", embed))
+    body.append(js(join_path("thirdparty", "jquery.js"), embed))
 
 def add_class(element, cls_name):
     cls = element.get("class", "")
@@ -52,7 +54,7 @@ def deckjs(tree, embed=True):
     body = tree[1]
 
     def path(*args):
-        return os.path.join("thirdparty", "deckjs", *args)
+        return join_path("thirdparty", "deckjs", *args)
 
     add_class(body, "deck-container")
 
@@ -89,7 +91,7 @@ def revealjs(tree, embed=True):
     body = tree[1]
 
     def path(*args):
-        return os.path.join("thirdparty", "revealjs", *args)
+        return join_path("thirdparty", "revealjs", *args)
 
     # remove the default style
     head.remove(head.find("./style"))
@@ -117,7 +119,7 @@ def revealjs(tree, embed=True):
 def bootstrap_css(tree, embed=True):
     head = tree[0]
 
-    head.append(css("bootstrap.css", embed))
+    head.append(css(join_path("thirdparty", "bootstrap.css"), embed))
     head.append(css("rst2html5.css", embed))
 
 PROCESSORS = {
