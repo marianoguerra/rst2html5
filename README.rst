@@ -20,10 +20,14 @@ get it
 use it
 ------
 
-to generate a set of slides::
+to generate a set of slides using deck.js::
 
         cd rst2html5
         ./bin/rst2html5 --deck-js --pretty-print-code --embed-content examples/slides.rst > slides.html
+
+to generate a set of slides using reveal.js::
+
+        bin/rst2html5 --jquery --reveal-js --pretty-print-code examples/slides.rst > reveal.html
 
 to generate a page using bootstrap::
 
