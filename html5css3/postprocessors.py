@@ -35,7 +35,7 @@ def pretty_print_code(tree, embed=True):
 
 def jquery(tree, embed=True):
     body = tree[1]
-    body.append(js("jquery-1.7.1.min.js", embed))
+    body.append(js("jquery.js", embed))
 
 def add_class(element, cls_name):
     cls = element.get("class", "")
