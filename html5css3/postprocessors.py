@@ -37,19 +37,19 @@ def jquery(tree, embed=True):
     body = tree[1]
     body.append(js("jquery-1.7.1.min.js", embed))
 
+def add_class(element, cls_name):
+    cls = element.get("class", "")
+
+    if cls:
+        cls += " " + cls_name
+    else:
+        cls += cls_name
+
+    element.set("class", cls)
+
 def deckjs(tree, embed=True):
     head = tree[0]
     body = tree[1]
-
-    def add_class(element, cls_name):
-        cls = element.get("class", "")
-
-        if cls:
-            cls += " " + cls_name
-        else:
-            cls += cls_name
-
-        element.set("class", cls)
 
     def path(*args):
         return os.path.join("thirdparty", "deckjs", *args)
@@ -88,16 +88,6 @@ def revealjs(tree, embed=True):
     head = tree[0]
     body = tree[1]
 
-    def add_class(element, cls_name):
-        cls = element.get("class", "")
-
-        if cls:
-            cls += " " + cls_name
-        else:
-            cls += cls_name
-
-        element.set("class", cls)
-
     def path(*args):
         return os.path.join("thirdparty", "revealjs", *args)
 
@@ -116,10 +106,6 @@ def revealjs(tree, embed=True):
     # <link rel="stylesheet" href="css/theme/default.css" id="theme">
     head.append(css(path("css", "reveal.css"), embed))
     head.append(css(path("css", "theme", "default.css"), embed))
-
-    # <!-- For syntax highlighting -->
-    # <link rel="stylesheet" href="lib/css/zenburn.css">
-    # head.append(css(path("lib", "css", "zenburn.css"), embed))
 
     # <script src="lib/js/head.min.js"></script>
     # <script src="js/reveal.min.js"></script>
