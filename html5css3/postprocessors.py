@@ -6,7 +6,7 @@ import html
 BASE_PATH = os.path.dirname(__file__)
 
 def abspath(path):
-    return os.path.join(BASE_PATH, path)
+    return os.path.join(BASE_PATH, "..", path)
 
 def js(path, embed=True):
     content = open(abspath(path)).read().decode('utf-8')
