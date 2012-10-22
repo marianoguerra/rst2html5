@@ -20,7 +20,11 @@ get it
 use it
 ------
 
-::
+to generate a set of slides::
 
         cd rst2html5
         ./bin/rst2html5 --deck-js --pretty-print-code --embed-content examples/slides.rst > slides.html
+
+to generate a page using bootstrap::
+
+        ./bin/rst2html5 --bootstrap-css --pretty-print-code --jquery --embed-content examples/slides.rst > slides-plain.html
