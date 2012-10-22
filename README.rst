@@ -16,3 +16,11 @@ get it
         git clone https://github.com/marianoguerra/rst2html5.git
         cd rst2html5
         git submodule update --init
+
+use it
+------
+
+::
+
+        cd rst2html5
+        ./bin/rst2html5 --deck-js --pretty-print-code --embed-content examples/slides.rst > slides.html
