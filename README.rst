@@ -23,7 +23,7 @@ use it
 to generate a set of slides using deck.js::
 
         cd rst2html5
-        ./bin/rst2html5 --deck-js --pretty-print-code --embed-content examples/slides.rst > slides.html
+        ./bin/rst2html5 --deck-js --pretty-print-code --embed-content examples/slides.rst > deck.html
 
 to generate a set of slides using reveal.js::
 
@@ -31,4 +31,13 @@ to generate a set of slides using reveal.js::
 
 to generate a page using bootstrap::
 
-        ./bin/rst2html5 --bootstrap-css --pretty-print-code --jquery --embed-content examples/slides.rst > slides-plain.html
+        ./bin/rst2html5 --bootstrap-css --pretty-print-code --jquery --embed-content examples/slides.rst > bootstrap.html
+
+see it
+------
+
+you can see the examples from the above commands here:
+
+* http://marianoguerra.github.com/rst2html5/output/reveal.html
+* http://marianoguerra.github.com/rst2html5/output/deck.html
+* http://marianoguerra.github.com/rst2html5/output/bootstrap.html
