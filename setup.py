@@ -13,6 +13,12 @@ setup(
     packages=['html5css3'],
     scripts = ['bin/rst2html5'],
     include_package_data = True,
+    package_data = {
+        "": [
+            "thirdparty/*",
+            "rst2html5.css"
+        ]
+    },
     install_requires=['docutils'],
     classifiers=[
         'Development Status :: 4 - Beta',
