@@ -9,16 +9,9 @@ setup(
     author_email='luismarianoguerra@gmail.com',
     url='https://github.com/marianoguerra/rst2html5',
     long_description=open('README.rst').read(),
-    # py_modules=['html5css3'],
     packages=['html5css3'],
     scripts = ['bin/rst2html5'],
     include_package_data = True,
-    package_data = {
-        "": [
-            "thirdparty/*",
-            "rst2html5.css"
-        ]
-    },
     install_requires=['docutils'],
     classifiers=[
         'Development Status :: 4 - Beta',

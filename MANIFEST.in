@@ -1,2 +1,2 @@
-include rst2html5.css
-recursive-include thirdparty *
+include html5css3/rst2html5.css
+recursive-include html5css3/thirdparty *
