@@ -42,7 +42,7 @@ class Writer(writers.Writer):
 
     default_stylesheet_path = utils.relative_path(
         os.path.join(os.getcwd(), 'dummy'),
-        os.path.join(os.path.dirname(__file__), "..", default_stylesheet))
+        os.path.join(os.path.dirname(__file__), default_stylesheet))
 
     settings_spec = (
         'HTML-Specific Options',

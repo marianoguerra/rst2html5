@@ -1,6 +1,6 @@
-[submodule "thirdparty/deckjs"]
-	path = thirdparty/deckjs
-	url = https://github.com/imakewebthings/deck.js
-[submodule "thirdparty/revealjs"]
-	path = thirdparty/revealjs
+[submodule "html5css3/thirdparty/revealjs"]
+	path = html5css3/thirdparty/revealjs
 	url = https://github.com/hakimel/reveal.js.git
+[submodule "html5css3/thirdparty/deckjs"]
+	path = html5css3/thirdparty/deckjs
+	url = https://github.com/imakewebthings/deck.js
