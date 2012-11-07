@@ -8,7 +8,7 @@ BASE_PATH = os.path.dirname(__file__)
 join_path = os.path.join
 
 def abspath(path):
-    return join_path(BASE_PATH, "..", path)
+    return join_path(BASE_PATH, path)
 
 def js(path, embed=True):
     content = open(abspath(path)).read().decode('utf-8')
