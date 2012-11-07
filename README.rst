@@ -33,6 +33,9 @@ to generate a page using bootstrap::
 
         ./bin/rst2html5 --bootstrap-css --pretty-print-code --jquery --embed-content examples/slides.rst > bootstrap.html
 
+to embed images inside the html file to have a single .html file to distribute
+add the --embed-images option.
+
 see it
 ------
 

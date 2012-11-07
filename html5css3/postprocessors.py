@@ -122,6 +122,25 @@ def bootstrap_css(tree, embed=True):
     head.append(css(join_path("thirdparty", "bootstrap.css"), embed))
     head.append(css("rst2html5.css", embed))
 
+def embed_images(tree, embed=True):
+    import base64
+    for image in tree.findall(".//img"):
+        path = image.attrib['src']
+        lowercase_path = path.lower()
+
+        if lowercase_path.endswith(".png"):
+            content_type = "image/png"
+        elif lowercase_path.endswith(".jpg"):
+            content_type = "image/jpg"
+        elif lowercase_path.endswith(".gif"):
+            content_type = "image/gif"
+        else:
+            continue
+
+        encoded = base64.b64encode(open(path).read())
+        content = "data:%s;base64,%s" % (content_type, encoded)
+        image.set('src', content)
+
 PROCESSORS = {
     "jquery": {
         "name": "add jquery",
@@ -142,5 +161,9 @@ PROCESSORS = {
     "bootstrap_css": {
         "name": "bootstrap css",
         "processor": bootstrap_css
+    },
+    "embed_images": {
+        "name": "embed images",
+        "processor": embed_images
     }
 }
