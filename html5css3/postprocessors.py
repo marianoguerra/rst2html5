@@ -114,6 +114,8 @@ def revealjs(tree, embed=True):
     body.append(js(path("lib", "js", "head.min.js"), embed))
     body.append(js(path("js", "reveal.min.js"), embed))
 
+    head.append(css("rst2html5-reveal.css", embed))
+
     body.append(html.Script("$(function () { Reveal.initialize({history:true}); });"))
 
 def bootstrap_css(tree, embed=True):

@@ -1,0 +1,3 @@
+.hide-title>h1, .hide-title>h2, .hide-title>h3, .hide-title>h5, .hide-title>h6{
+ display: none
+}
