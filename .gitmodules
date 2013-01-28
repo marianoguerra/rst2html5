@@ -4,3 +4,6 @@
 [submodule "html5css3/thirdparty/deckjs"]
 	path = html5css3/thirdparty/deckjs
 	url = https://github.com/imakewebthings/deck.js
+[submodule "html5css3/thirdparty/impressjs"]
+	path = html5css3/thirdparty/impressjs
+	url = https://github.com/bartaz/impress.js.git

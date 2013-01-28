@@ -3,6 +3,10 @@ import os
 import html5css3
 import html
 
+from docutils import nodes
+from docutils.parsers.rst import directives
+from docutils.parsers.rst import Directive
+
 BASE_PATH = os.path.dirname(__file__)
 
 join_path = os.path.join
@@ -56,6 +60,7 @@ def deckjs(tree, embed=True):
     def path(*args):
         return join_path("thirdparty", "deckjs", *args)
 
+    head.remove(head.find("./style"))
     add_class(body, "deck-container")
 
     for section in tree.findall(".//section"):
@@ -118,6 +123,36 @@ def revealjs(tree, embed=True):
 
     body.append(html.Script("$(function () { Reveal.initialize({history:true}); });"))
 
+def impressjs(tree, embed=True):
+    head = tree[0]
+    body = tree[1]
+
+    def path(*args):
+        return join_path("thirdparty", "impressjs", *args)
+
+    # remove the default style
+    #head.remove(head.find("./style"))
+    add_class(body, "impress-not-supported")
+    failback = html.Div('<div class="fallback-message">' + 
+        '<p>Your browser <b>doesn\'t support the features required</b> by' + 
+        'impress.js, so you are presented with a simplified version of this' + 
+        'presentation.</p>' + 
+        '<p>For the best experience please use the latest <b>Chrome</b>,' + 
+        '<b>Safari</b> or <b>Firefox</b> browser.</p></div>')
+
+    slides = html.Div(id="impress")
+
+    for item in list(body):
+        body.remove(item)
+        slides.append(item)
+
+    body.append(slides)
+
+    # <script src="js/impress.js"></script>
+    body.append(js(path("js", "impress.js"), embed))
+
+    body.append(html.Script("impress().init();"))
+
 def bootstrap_css(tree, embed=True):
     head = tree[0]
 
@@ -160,6 +195,10 @@ PROCESSORS = {
         "name": "reveal.js",
         "processor": revealjs
     },
+    "impress_js": {
+        "name": "impress.js",
+        "processor": impressjs
+    },
     "bootstrap_css": {
         "name": "bootstrap css",
         "processor": bootstrap_css
@@ -169,3 +208,39 @@ PROCESSORS = {
         "processor": embed_images
     }
 }
+
+
+class Slide3D(Directive):
+
+    required_arguments = 0
+    optional_arguments = 0
+    final_argument_whitespace = False
+    option_spec = {
+            'x': int,
+            'y': int,
+            'z': int,
+            'rotate': int,
+            'rotate-x': int,
+            'rotate-y': int,
+            'scale': int,
+            'class': directives.unchanged,
+            'id': directives.unchanged,
+            'title': directives.unchanged
+    }
+    has_content = True
+
+    def run(self):
+        attributes = {}
+
+        for key, value in self.options.iteritems():
+            if key in ('class', 'id', 'title'):
+                attributes[key] = value
+            else:
+                attributes['data-' + key] = value
+
+        node = nodes.container(rawsource=self.block_text, **attributes)
+        self.state.nested_parse(self.content, self.content_offset, node)
+
+        return [node]
+
+directives.register_directive('slide-3d', Slide3D)

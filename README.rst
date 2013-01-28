@@ -29,6 +29,10 @@ to generate a set of slides using reveal.js::
 
         bin/rst2html5 --jquery --reveal-js --pretty-print-code examples/slides.rst > reveal.html
 
+to generate a set of slides using impress.js::
+
+    ./bin/rst2html5 --stylesheet-path=html5css3/thirdparty/impressjs/css/impress-demo.css --impress-js examples/impress.rst > output/impress.html
+
 to generate a page using bootstrap::
 
         ./bin/rst2html5 --bootstrap-css --pretty-print-code --jquery --embed-content examples/slides.rst > bootstrap.html
@@ -43,4 +47,5 @@ you can see the examples from the above commands here:
 
 * http://marianoguerra.github.com/rst2html5/output/reveal.html
 * http://marianoguerra.github.com/rst2html5/output/deck.html
+* http://marianoguerra.github.com/rst2html5/output/impress.html
 * http://marianoguerra.github.com/rst2html5/output/bootstrap.html

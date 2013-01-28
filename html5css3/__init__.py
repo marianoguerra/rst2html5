@@ -644,9 +644,19 @@ class HTMLTranslator(nodes.NodeVisitor):
             new_current = handler(node, self)
             already_inserted = True
         else:
-            new_current = Div(class_=nodename)
+            known_attributes = self.get_known_attributes(node)
+            new_current = Div(**known_attributes)
 
         self._stack(new_current, node, not already_inserted)
+
+    def get_known_attributes(self, node):
+        attrs = {}
+
+        for attr, value in node.attributes.iteritems():
+            if attr.startswith("data-") or attr in {'title', 'class', 'id'}:
+                attrs[attr] = value
+
+        return attrs
 
     unknown_departure = pop_parent
     depart_reference = pop_parent
