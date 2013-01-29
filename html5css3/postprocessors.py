@@ -178,6 +178,38 @@ def embed_images(tree, embed=True):
         content = "data:%s;base64,%s" % (content_type, encoded)
         image.set('src', content)
 
+def pygmentize(tree, embed=True):
+    from pygments import highlight
+    from pygments.lexers import get_lexer_by_name
+    from pygments.formatters import HtmlFormatter
+
+    pygments_formatter = HtmlFormatter()
+    body = tree[1]
+
+    def highlight_code(lang, code):
+        try:
+            lexer = get_lexer_by_name(lang)
+        except ValueError:
+            # no lexer found - use the text one instead of an exception
+            lexer = get_lexer_by_name('text')
+
+        parsed = highlight(code, lexer, pygments_formatter)
+        return parsed
+
+    for block in body.findall(".//pre"):
+        cls = block.attrib.get('class', '')
+        classes = cls.split()
+        if 'code' in classes:
+            lang_classes = [cls for cls in classes if cls.startswith('lang-')]
+
+            if len(lang_classes) > 0:
+                lang = lang_classes[0][5:]
+
+                new_content = highlight_code(lang, block.text)
+                block.tag = 'div'
+                block.text = new_content
+
+
 PROCESSORS = {
     "jquery": {
         "name": "add jquery",
@@ -186,6 +218,10 @@ PROCESSORS = {
     "pretty_print_code": {
         "name": "pretty print code",
         "processor": pretty_print_code
+    },
+    "pygments": {
+        "name": "pygments",
+        "processor": pygmentize
     },
     "deck_js": {
         "name": "deck.js",
@@ -209,6 +245,21 @@ PROCESSORS = {
     }
 }
 
+class Code(Directive):
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = False
+    has_content = True
+
+    def run(self):
+        language = self.arguments[0]
+        content = self.content
+
+        attrs = {
+            'class': "code lang-" + language
+        }
+
+        return [nodes.literal_block('', "\n".join(content), **attrs)]
 
 class Slide3D(Directive):
 
@@ -244,3 +295,4 @@ class Slide3D(Directive):
         return [node]
 
 directives.register_directive('slide-3d', Slide3D)
+directives.register_directive('code-block', Code)

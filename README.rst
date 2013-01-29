@@ -37,6 +37,13 @@ to generate a page using bootstrap::
 
         ./bin/rst2html5 --bootstrap-css --pretty-print-code --jquery --embed-content examples/slides.rst > bootstrap.html
 
+to higlight code with pygments::
+
+    ./bin/rst2html5 --pygments examples/codeblock.rst > code.html
+
+note that you will have to add the stylesheet for the code to actually
+highlight, this just does the code parsing and html transformation.
+
 to embed images inside the html file to have a single .html file to distribute
 add the --embed-images option.
 
