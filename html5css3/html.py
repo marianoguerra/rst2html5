@@ -40,30 +40,13 @@ class TagBase(Element):
         Element.__init__(self, tag, clean_attrs)
 
         for child in childs:
-            if isinstance(child, basestring):
-                if self.text is None:
-                    self.text = self.maybe_quote(unicode(child))
-                else:
-                    self.text += self.maybe_quote(unicode(child))
-            else:
-                self.append(child)
+            self.append(child)
 
     def maybe_quote(self, text):
         if self.QUOTE:
             return quote(text)
         else:
             return text
-
-    def append(self, element):
-        '''override Element.append to support appending strings'''
-
-        if isinstance(element, basestring):
-            if self.text is None:
-                self.text = self.maybe_quote(element)
-            else:
-                self.text += self.maybe_quote(element)
-        else:
-            Element.append(self, element)
 
     def _format_child(self, child, level=0, increment=1, be_compact=False):
         """transform childs to string representations"""
