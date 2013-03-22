@@ -115,7 +115,7 @@ class Writer(writers.Writer):
             if getattr(settings, key):
                 processor(tree, embed)
 
-        self.output = visitor.astext()
+        self.output = str(tree)
 
 for (key, data) in postprocessors.PROCESSORS.iteritems():
     Writer.add_postprocessor(data["name"], key, data["processor"])
