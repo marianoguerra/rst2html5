@@ -239,7 +239,7 @@ NODES = {
     "citation_reference": None,
     "classifier": classifier,
     "colspec": skip,
-    "comment": Comment,
+    "comment": lambda node, _: Comment(node),
     "compound": None,
     "container": None,
     "decoration": skip,
