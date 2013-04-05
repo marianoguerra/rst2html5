@@ -319,6 +319,7 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.current = self.root
         self.settings = document.settings
 
+        self.title = self.settings.title or ""
         self.title_level = int(self.settings.initial_header_level)
         lcode = document.settings.language_code
 
@@ -332,7 +333,7 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         self.head = Head(
             Meta(charset=self.content_type),
-            Title("document"))
+            Title(self.title))
 
         styles = utils.get_stylesheet_list(self.settings)
 
