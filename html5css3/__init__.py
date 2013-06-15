@@ -441,17 +441,20 @@ class HTMLTranslator(nodes.NodeVisitor):
         pass
 
     def visit_title(self, node, sub=0):
-        heading = HEADINGS.get(self.title_level + sub, H6)()
-        current = heading
-        insert_current = True
+        if isinstance(self.current, Table):
+            self._stack(Caption(), node)
+        else:
+            heading = HEADINGS.get(self.title_level + sub, H6)()
+            current = heading
+            insert_current = True
 
-        if node.hasattr('refid'):
-            current = A(href= '#' + node['refid'])
-            heading.append(current)
-            insert_current = False
-            self._append(heading, node)
+            if node.hasattr('refid'):
+                current = A(href= '#' + node['refid'])
+                heading.append(current)
+                insert_current = False
+                self._append(heading, node)
 
-        self._stack(current, node, insert_current)
+            self._stack(current, node, insert_current)
 
     def visit_subtitle(self, node):
         self.visit_title(node, 1)
@@ -662,4 +665,3 @@ class HTMLTranslator(nodes.NodeVisitor):
     unknown_departure = pop_parent
     depart_reference = pop_parent
     depart_title = pop_parent
-
