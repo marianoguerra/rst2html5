@@ -29,6 +29,13 @@ def to_str(value):
     else:
         return str(value)
 
+def escape_attrs(node):
+    node.attrib = dict([(key.rstrip("_"), str(val))
+        for (key, val) in node.attrib.iteritems()])
+
+    for child in node:
+        escape_attrs(child)
+
 class TagBase(Element):
     "base class for all tags"
 
@@ -38,15 +45,13 @@ class TagBase(Element):
 
     def __init__(self, childs, attrs):
         "add childs and call parent constructor"
-        clean_attrs = dict([(key.rstrip("_"), str(val))
-            for (key, val) in attrs.iteritems()])
-
         tag = self.__class__.__name__.lower()
-
-        Element.__init__(self, tag, clean_attrs)
+        Element.__init__(self, tag, attrs)
 
         for child in childs:
             self.append(child)
+
+        escape_attrs(self)
 
     def append(self, child):
         if not isinstance(child, Element):
