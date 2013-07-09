@@ -215,6 +215,8 @@ def create_tags(ctx):
 
 create_tags(globals())
 
+DOCTYPE = "<!DOCTYPE html>"
+
 HEADINGS = {
     1: H1,
     2: H2,
