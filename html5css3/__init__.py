@@ -294,7 +294,7 @@ NODES = {
     "table": Table,
     "tbody": Tbody,
     "term": Dt,
-    "tgroup": Colgroup,
+    "tgroup": skip,
     "thead": Thead,
     "title_reference": Cite,
     "transition": Hr,
