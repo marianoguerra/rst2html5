@@ -256,11 +256,11 @@ NODES = {
     "field_list": Table,
     "field_name": (Td, "field-label"),
     "figure": Figure,
-    "footer": Footer,
+    "footer": skip, # TODO temporary skip
     "footnote": None,
     "footnote_reference": None,
     "generated": skip,
-    "header": Header,
+    "header": skip, # TODO temporary skip
     "image": Img,
     "inline": Span,
     "label": (Div, "du-label"),
@@ -449,6 +449,11 @@ class HTMLTranslator(nodes.NodeVisitor):
             current = heading
             insert_current = True
 
+            # only wrap in header tags if the <title> is a child of section
+            # this excludes the main page title, subtitles and topics
+            if self.current.tag == "section":
+                self._stack(Header(), node, True)
+
             if node.hasattr('refid'):
                 current = A(href= '#' + node['refid'])
                 heading.append(current)
@@ -456,6 +461,12 @@ class HTMLTranslator(nodes.NodeVisitor):
                 self._append(heading, node)
 
             self._stack(current, node, insert_current)
+
+    def depart_title(self, node):
+        self.current = self.parents.pop()
+
+        if self.current.tag == "header":
+            self.current = self.parents.pop()
 
     def visit_subtitle(self, node):
         self.visit_title(node, 1)
@@ -665,4 +676,3 @@ class HTMLTranslator(nodes.NodeVisitor):
 
     unknown_departure = pop_parent
     depart_reference = pop_parent
-    depart_title = pop_parent
