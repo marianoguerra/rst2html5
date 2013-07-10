@@ -207,9 +207,9 @@ def create_tags(ctx):
             "__init__": __init__
         })
 
-        cls.SELF_CLOSING = self_closing
-        cls.COMPACT = compact
         cls.QUOTE = quote
+        cls.COMPACT = compact
+        cls.SELF_CLOSING = self_closing
 
         ctx[class_name] = cls
 

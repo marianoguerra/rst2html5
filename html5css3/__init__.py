@@ -223,7 +223,6 @@ NODES = {
     "admonition": admonition,
     "note": admonition,
     "tip": admonition,
-    "note": admonition,
     "hint": admonition,
     "attention": admonition,
     "caution": admonition,
@@ -268,8 +267,7 @@ NODES = {
     "line": None,
     "line_block": None,
     "list_item": Li,
-    "literal": (Span, "literal"),
-    "literal_block": (Pre, "literal-block"),
+    "literal": Code, # inline literal markup use the <code> tag in HTML5. inline code uses <code class="code">
     "math": None,
     "math_block": None,
     "meta": Meta,
@@ -301,14 +299,15 @@ NODES = {
 
     # handled in visit_*
     "entry": None,
-    "Text": None,
+    "enumerated_list": None,
+    "literal_block": None,
+    "target": None,
+    "text": None,
+    "title": None,
     "topic": None,
     "section": None,
-    "title": None,
     "subtitle": None,
-    "target": None,
     "system_message": None,
-    "enumerated_list": None,
 }
 
 class HTMLTranslator(nodes.NodeVisitor):
@@ -440,6 +439,20 @@ class HTMLTranslator(nodes.NodeVisitor):
 
     def depart_Text(self, node):
         pass
+
+    def visit_literal_block(self, node):
+        pre = Pre()
+        self._stack(pre, node, True)
+        if 'code' in node.get('classes', []):
+            code = Code()
+            self._stack(code, node)
+            del pre.attrib['class']
+
+    def depart_literal_block(self, node):
+        if isinstance(self.current, Code):
+            self.current = self.parents.pop()
+
+        self.current = self.parents.pop()
 
     def visit_title(self, node, sub=0):
         if isinstance(self.current, Table):
