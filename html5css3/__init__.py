@@ -20,6 +20,7 @@ import os
 import re
 import sys
 import time
+import json
 
 import os.path
 
@@ -35,6 +36,12 @@ from docutils import frontend, nodes, utils, writers, languages
 from html import *
 # import default post processors so they register
 import postprocessors
+
+def parse_param_value(value):
+    try:
+        return json.loads(value)
+    except ValueError:
+        return value
 
 class Writer(writers.Writer):
 
@@ -96,6 +103,8 @@ class Writer(writers.Writer):
     @classmethod
     def add_postprocessor(cls, name, opt_name, processor):
         opt_switch = '--' + opt_name.replace("_", "-")
+        opt_switch_params = opt_switch + "-opts"
+        opt_params_name = opt_name + "_opts"
 
         cls.settings_spec[2].append((name, [opt_switch], {
                 'dest': opt_name,
@@ -103,6 +112,9 @@ class Writer(writers.Writer):
                 'validator': frontend.validate_boolean
             }
         ))
+
+        cls.settings_spec[2].append(("set " + name + " params",
+            [opt_switch_params], {'dest': opt_params_name}))
 
         cls.post_processors[opt_name] = processor
 
@@ -120,7 +132,19 @@ class Writer(writers.Writer):
 
         for (key, processor) in Writer.post_processors.iteritems():
             if getattr(settings, key):
-                processor(tree, embed)
+
+                params_str = getattr(settings, key + "_opts") or ""
+                pairs = []
+
+                for keyval in params_str.split(","):
+                    if "=" not in keyval:
+                        continue
+                    key, val = keyval.split("=", 1)
+                    parsed_val = parse_param_value(val)
+                    pairs.append((key, parsed_val))
+
+                params = dict(pairs)
+                processor(tree, embed, params)
 
         self.output = DOCTYPE
         self.output += str(tree)

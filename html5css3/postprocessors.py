@@ -30,7 +30,7 @@ def css(path, embed=True):
     else:
         return html.Link(href=path, rel="stylesheet", type="text/css")
 
-def pretty_print_code(tree, embed=True):
+def pretty_print_code(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
 
@@ -39,7 +39,7 @@ def pretty_print_code(tree, embed=True):
 
     head.append(css(join_path("thirdparty", "prettify.css")))
 
-def jquery(tree, embed=True):
+def jquery(tree, embed=True, params=None):
     body = tree[1]
     body.append(js(join_path("thirdparty", "jquery.js"), embed))
 
@@ -53,7 +53,7 @@ def add_class(element, cls_name):
 
     element.set("class", cls)
 
-def deckjs(tree, embed=True):
+def deckjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
 
@@ -91,9 +91,11 @@ def deckjs(tree, embed=True):
 
     body.append(html.Script("$(function () { $.deck('.slide'); });"))
 
-def revealjs(tree, embed=True):
+def revealjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
+    params = params or {}
+    theme_name = params.get("theme", "default") + ".css"
 
     def path(*args):
         return join_path("thirdparty", "revealjs", *args)
@@ -110,7 +112,7 @@ def revealjs(tree, embed=True):
     # <link rel="stylesheet" href="css/reveal.css">
     # <link rel="stylesheet" href="css/theme/default.css" id="theme">
     head.append(css(path("css", "reveal.css"), embed))
-    head.append(css(path("css", "theme", "default.css"), embed))
+    head.append(css(path("css", "theme", theme_name), embed))
 
     # <script src="lib/js/head.min.js"></script>
     # <script src="js/reveal.min.js"></script>
@@ -121,7 +123,7 @@ def revealjs(tree, embed=True):
 
     body.append(html.Script("$(function () { Reveal.initialize({history:true}); });"))
 
-def impressjs(tree, embed=True):
+def impressjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
 
@@ -151,13 +153,13 @@ def impressjs(tree, embed=True):
 
     body.append(html.Script("impress().init();"))
 
-def bootstrap_css(tree, embed=True):
+def bootstrap_css(tree, embed=True, params=None):
     head = tree[0]
 
     head.append(css(join_path("thirdparty", "bootstrap.css"), embed))
     head.append(css("rst2html5.css", embed))
 
-def embed_images(tree, embed=True):
+def embed_images(tree, embed=True, params=None):
     import base64
     for image in tree.findall(".//img"):
         path = image.attrib['src']
@@ -176,7 +178,7 @@ def embed_images(tree, embed=True):
         content = "data:%s;base64,%s" % (content_type, encoded)
         image.set('src', content)
 
-def pygmentize(tree, embed=True):
+def pygmentize(tree, embed=True, params=None):
     from pygments import highlight
     from pygments.lexers import get_lexer_by_name
     from pygments.formatters import HtmlFormatter
