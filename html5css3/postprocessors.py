@@ -98,8 +98,6 @@ def revealjs(tree, embed=True):
     def path(*args):
         return join_path("thirdparty", "revealjs", *args)
 
-    # remove the default style
-    head.remove(head.find("./style"))
     add_class(body, "reveal")
     slides = html.Div(class_="slides")
 
