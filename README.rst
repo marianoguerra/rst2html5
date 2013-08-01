@@ -47,6 +47,18 @@ highlight, this just does the code parsing and html transformation.
 to embed images inside the html file to have a single .html file to distribute
 add the --embed-images option.
 
+post processors support optional parameters, they are passed with a command
+line option with the same name as the post processor appending "-opts" at the
+end, for example to change the revealjs theme you can do::
+
+        bin/rst2html5 --jquery --reveal-js --reveal-js-opts theme=serif examples/slides.rst > reveal.html
+
+options are passed as a comma separated list of key value pairs separated with
+an equal sign, values are parsed as json, if parsing fails they are passed as
+strings, for example here is an example of options::
+
+    --some-processor-opts theme=serif,count=4,verbose=true,foo=null
+
 see it
 ------
 
