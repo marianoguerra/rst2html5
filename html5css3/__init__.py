@@ -63,6 +63,9 @@ class Writer(writers.Writer):
           ['--embed-content'],
           {'default': 1, 'action': 'store_true',
            'validator': frontend.validate_boolean}),
+         ('Add a favicon to the generated page',
+          ['--favicon'],
+          {'default': None}),
          ('Link to the content in the output HTML file. '
           'Default: embed content.',
           ['--link-content'],
@@ -110,6 +113,10 @@ class Writer(writers.Writer):
 
         settings = self.document.settings
         embed = settings.embed_content
+        favicon_path = settings.favicon
+
+        if favicon_path:
+            tree[0].append(Link(href=favicon_path, rel="shortcut icon"))
 
         for (key, processor) in Writer.post_processors.iteritems():
             if getattr(settings, key):
