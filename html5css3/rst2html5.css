@@ -1,5 +1,7 @@
 body{
  margin: 5% 15%;
+ font-family: helvetica;
+ color: #222;
 }
 
 li>p{
