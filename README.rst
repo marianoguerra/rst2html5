@@ -20,6 +20,10 @@ get it
 use it
 ------
 
+to generate a basic html document::
+
+        bin/rst2html5 examples/slides.rst > clean.html
+
 to generate a set of slides using deck.js::
 
         cd rst2html5
@@ -64,6 +68,7 @@ see it
 
 you can see the examples from the above commands here:
 
+* http://marianoguerra.github.com/rst2html5/output/clean.html
 * http://marianoguerra.github.com/rst2html5/output/reveal.html
 * http://marianoguerra.github.com/rst2html5/output/deck.html
 * http://marianoguerra.github.com/rst2html5/output/impress.html
