@@ -73,3 +73,11 @@ ol.lowerroman{
 ol.upperroman{
  list-style-type: upper-roman;
 }
+
+img.align-left{
+ float: left;
+}
+
+img.align-right{
+ float: right;
+}

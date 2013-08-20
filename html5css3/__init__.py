@@ -20,6 +20,7 @@ import os
 import re
 import sys
 import time
+import json
 
 import os.path
 
@@ -35,6 +36,12 @@ from docutils import frontend, nodes, utils, writers, languages
 from html import *
 # import default post processors so they register
 import postprocessors
+
+def parse_param_value(value):
+    try:
+        return json.loads(value)
+    except ValueError:
+        return value
 
 class Writer(writers.Writer):
 
@@ -63,6 +70,9 @@ class Writer(writers.Writer):
           ['--embed-content'],
           {'default': 1, 'action': 'store_true',
            'validator': frontend.validate_boolean}),
+         ('Add a favicon to the generated page',
+          ['--favicon'],
+          {'default': None}),
          ('Link to the content in the output HTML file. '
           'Default: embed content.',
           ['--link-content'],
@@ -93,6 +103,8 @@ class Writer(writers.Writer):
     @classmethod
     def add_postprocessor(cls, name, opt_name, processor):
         opt_switch = '--' + opt_name.replace("_", "-")
+        opt_switch_params = opt_switch + "-opts"
+        opt_params_name = opt_name + "_opts"
 
         cls.settings_spec[2].append((name, [opt_switch], {
                 'dest': opt_name,
@@ -100,6 +112,9 @@ class Writer(writers.Writer):
                 'validator': frontend.validate_boolean
             }
         ))
+
+        cls.settings_spec[2].append(("set " + name + " params",
+            [opt_switch_params], {'dest': opt_params_name}))
 
         cls.post_processors[opt_name] = processor
 
@@ -110,12 +125,29 @@ class Writer(writers.Writer):
 
         settings = self.document.settings
         embed = settings.embed_content
+        favicon_path = settings.favicon
+
+        if favicon_path:
+            tree[0].append(Link(href=favicon_path, rel="shortcut icon"))
 
         for (key, processor) in Writer.post_processors.iteritems():
             if getattr(settings, key):
-                processor(tree, embed)
 
-        self.output = visitor.astext()
+                params_str = getattr(settings, key + "_opts") or ""
+                pairs = []
+
+                for keyval in params_str.split(","):
+                    if "=" not in keyval:
+                        continue
+                    key, val = keyval.split("=", 1)
+                    parsed_val = parse_param_value(val)
+                    pairs.append((key, parsed_val))
+
+                params = dict(pairs)
+                processor(tree, embed, params)
+
+        self.output = DOCTYPE
+        self.output += str(tree)
 
 for (key, data) in postprocessors.PROCESSORS.iteritems():
     Writer.add_postprocessor(data["name"], key, data["processor"])
@@ -222,7 +254,6 @@ NODES = {
     "admonition": admonition,
     "note": admonition,
     "tip": admonition,
-    "note": admonition,
     "hint": admonition,
     "attention": admonition,
     "caution": admonition,
@@ -234,12 +265,12 @@ NODES = {
     "attribution": (P, "attribution"),
     "block_quote": Blockquote,
     "bullet_list": Ul,
-    "caption": Caption,
+    "caption": Figcaption,
     "citation": (Div, "cite"),
     "citation_reference": None,
     "classifier": classifier,
     "colspec": skip,
-    "comment": Comment,
+    "comment": lambda node, _: Comment(node),
     "compound": None,
     "container": None,
     "decoration": skip,
@@ -254,21 +285,20 @@ NODES = {
     "field_body": Td,
     "field_list": Table,
     "field_name": (Td, "field-label"),
-    "figure": None,
-    "footer": Footer,
+    "figure": Figure,
+    "footer": skip, # TODO temporary skip
     "footnote": None,
     "footnote_reference": None,
     "generated": skip,
-    "header": Header,
+    "header": skip, # TODO temporary skip
     "image": Img,
     "inline": Span,
     "label": (Div, "du-label"),
-    "legend": None,
+    "legend": skip,
     "line": None,
     "line_block": None,
     "list_item": Li,
-    "literal": (Span, "literal"),
-    "literal_block": (Pre, "literal-block"),
+    "literal": Code, # inline literal markup use the <code> tag in HTML5. inline code uses <code class="code">
     "math": None,
     "math_block": None,
     "meta": Meta,
@@ -293,21 +323,22 @@ NODES = {
     "table": Table,
     "tbody": Tbody,
     "term": Dt,
-    "tgroup": Colgroup,
+    "tgroup": skip,
     "thead": Thead,
     "title_reference": Cite,
     "transition": Hr,
 
     # handled in visit_*
     "entry": None,
-    "Text": None,
+    "enumerated_list": None,
+    "literal_block": None,
+    "target": None,
+    "text": None,
+    "title": None,
     "topic": None,
     "section": None,
-    "title": None,
     "subtitle": None,
-    "target": None,
     "system_message": None,
-    "enumerated_list": None,
 }
 
 class HTMLTranslator(nodes.NodeVisitor):
@@ -319,6 +350,7 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.current = self.root
         self.settings = document.settings
 
+        self.title = self.settings.title or ""
         self.title_level = int(self.settings.initial_header_level)
         lcode = document.settings.language_code
 
@@ -332,7 +364,7 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         self.head = Head(
             Meta(charset=self.content_type),
-            Title("document"))
+            Title(self.title))
 
         styles = utils.get_stylesheet_list(self.settings)
 
@@ -439,18 +471,46 @@ class HTMLTranslator(nodes.NodeVisitor):
     def depart_Text(self, node):
         pass
 
+    def visit_literal_block(self, node):
+        pre = Pre()
+        self._stack(pre, node, True)
+        if 'code' in node.get('classes', []):
+            code = Code()
+            self._stack(code, node)
+            del pre.attrib['class']
+
+    def depart_literal_block(self, node):
+        if isinstance(self.current, Code):
+            self.current = self.parents.pop()
+
+        self.current = self.parents.pop()
+
     def visit_title(self, node, sub=0):
-        heading = HEADINGS.get(self.title_level + sub, H6)()
-        current = heading
-        insert_current = True
+        if isinstance(self.current, Table):
+            self._stack(Caption(), node)
+        else:
+            heading = HEADINGS.get(self.title_level + sub, H6)()
+            current = heading
+            insert_current = True
 
-        if node.hasattr('refid'):
-            current = A(href= '#' + node['refid'])
-            heading.append(current)
-            insert_current = False
-            self._append(heading, node)
+            # only wrap in header tags if the <title> is a child of section
+            # this excludes the main page title, subtitles and topics
+            if self.current.tag == "section":
+                self._stack(Header(), node, True)
 
-        self._stack(current, node, insert_current)
+            if node.hasattr('refid'):
+                current = A(href= '#' + node['refid'])
+                heading.append(current)
+                insert_current = False
+                self._append(heading, node)
+
+            self._stack(current, node, insert_current)
+
+    def depart_title(self, node):
+        self.current = self.parents.pop()
+
+        if self.current.tag == "header":
+            self.current = self.parents.pop()
 
     def visit_subtitle(self, node):
         self.visit_title(node, 1)
@@ -660,5 +720,3 @@ class HTMLTranslator(nodes.NodeVisitor):
 
     unknown_departure = pop_parent
     depart_reference = pop_parent
-    depart_title = pop_parent
-

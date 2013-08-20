@@ -4,7 +4,7 @@
     :x: -1000
     :y: -1500
 
-    Aren't you just bored with all those slides-based presentations?
+    Aren't you just *bored* with all those slides-based presentations?
 
 
 .. slide-3d::
@@ -21,7 +21,7 @@
     :x: 1000
     :y: -1500
 
-    Would you like to impress your audience with 
+    Would you like to **impress** your audience with 
     stunning visualization of your talk?
 
 

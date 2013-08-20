@@ -20,6 +20,10 @@ get it
 use it
 ------
 
+to generate a basic html document::
+
+        bin/rst2html5 examples/slides.rst > clean.html
+
 to generate a set of slides using deck.js::
 
         cd rst2html5
@@ -37,14 +41,34 @@ to generate a page using bootstrap::
 
         ./bin/rst2html5 --bootstrap-css --pretty-print-code --jquery --embed-content examples/slides.rst > bootstrap.html
 
+to higlight code with pygments::
+
+    ./bin/rst2html5 --pygments examples/codeblock.rst > code.html
+
+note that you will have to add the stylesheet for the code to actually
+highlight, this just does the code parsing and html transformation.
+
 to embed images inside the html file to have a single .html file to distribute
 add the --embed-images option.
+
+post processors support optional parameters, they are passed with a command
+line option with the same name as the post processor appending "-opts" at the
+end, for example to change the revealjs theme you can do::
+
+        bin/rst2html5 --jquery --reveal-js --reveal-js-opts theme=serif examples/slides.rst > reveal.html
+
+options are passed as a comma separated list of key value pairs separated with
+an equal sign, values are parsed as json, if parsing fails they are passed as
+strings, for example here is an example of options::
+
+    --some-processor-opts theme=serif,count=4,verbose=true,foo=null
 
 see it
 ------
 
 you can see the examples from the above commands here:
 
+* http://marianoguerra.github.com/rst2html5/output/clean.html
 * http://marianoguerra.github.com/rst2html5/output/reveal.html
 * http://marianoguerra.github.com/rst2html5/output/deck.html
 * http://marianoguerra.github.com/rst2html5/output/impress.html

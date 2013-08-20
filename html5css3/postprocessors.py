@@ -30,7 +30,7 @@ def css(path, embed=True):
     else:
         return html.Link(href=path, rel="stylesheet", type="text/css")
 
-def pretty_print_code(tree, embed=True):
+def pretty_print_code(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
 
@@ -39,7 +39,7 @@ def pretty_print_code(tree, embed=True):
 
     head.append(css(join_path("thirdparty", "prettify.css")))
 
-def jquery(tree, embed=True):
+def jquery(tree, embed=True, params=None):
     body = tree[1]
     body.append(js(join_path("thirdparty", "jquery.js"), embed))
 
@@ -53,7 +53,7 @@ def add_class(element, cls_name):
 
     element.set("class", cls)
 
-def deckjs(tree, embed=True):
+def deckjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
 
@@ -91,15 +91,15 @@ def deckjs(tree, embed=True):
 
     body.append(html.Script("$(function () { $.deck('.slide'); });"))
 
-def revealjs(tree, embed=True):
+def revealjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
+    params = params or {}
+    theme_name = params.get("theme", "default") + ".css"
 
     def path(*args):
         return join_path("thirdparty", "revealjs", *args)
 
-    # remove the default style
-    head.remove(head.find("./style"))
     add_class(body, "reveal")
     slides = html.Div(class_="slides")
 
@@ -112,7 +112,7 @@ def revealjs(tree, embed=True):
     # <link rel="stylesheet" href="css/reveal.css">
     # <link rel="stylesheet" href="css/theme/default.css" id="theme">
     head.append(css(path("css", "reveal.css"), embed))
-    head.append(css(path("css", "theme", "default.css"), embed))
+    head.append(css(path("css", "theme", theme_name), embed))
 
     # <script src="lib/js/head.min.js"></script>
     # <script src="js/reveal.min.js"></script>
@@ -123,7 +123,7 @@ def revealjs(tree, embed=True):
 
     body.append(html.Script("$(function () { Reveal.initialize({history:true}); });"))
 
-def impressjs(tree, embed=True):
+def impressjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
 
@@ -153,13 +153,13 @@ def impressjs(tree, embed=True):
 
     body.append(html.Script("impress().init();"))
 
-def bootstrap_css(tree, embed=True):
+def bootstrap_css(tree, embed=True, params=None):
     head = tree[0]
 
     head.append(css(join_path("thirdparty", "bootstrap.css"), embed))
     head.append(css("rst2html5.css", embed))
 
-def embed_images(tree, embed=True):
+def embed_images(tree, embed=True, params=None):
     import base64
     for image in tree.findall(".//img"):
         path = image.attrib['src']
@@ -178,6 +178,38 @@ def embed_images(tree, embed=True):
         content = "data:%s;base64,%s" % (content_type, encoded)
         image.set('src', content)
 
+def pygmentize(tree, embed=True, params=None):
+    from pygments import highlight
+    from pygments.lexers import get_lexer_by_name
+    from pygments.formatters import HtmlFormatter
+
+    pygments_formatter = HtmlFormatter()
+    body = tree[1]
+
+    def highlight_code(lang, code):
+        try:
+            lexer = get_lexer_by_name(lang)
+        except ValueError:
+            # no lexer found - use the text one instead of an exception
+            lexer = get_lexer_by_name('text')
+
+        parsed = highlight(code, lexer, pygments_formatter)
+        return parsed
+
+    for block in body.findall(".//pre"):
+        cls = block.attrib.get('class', '')
+        classes = cls.split()
+        if 'code' in classes:
+            lang_classes = [cls for cls in classes if cls.startswith('lang-')]
+
+            if len(lang_classes) > 0:
+                lang = lang_classes[0][5:]
+
+                new_content = highlight_code(lang, block.text)
+                block.tag = 'div'
+                block.text = new_content
+
+
 PROCESSORS = {
     "jquery": {
         "name": "add jquery",
@@ -186,6 +218,10 @@ PROCESSORS = {
     "pretty_print_code": {
         "name": "pretty print code",
         "processor": pretty_print_code
+    },
+    "pygments": {
+        "name": "pygments",
+        "processor": pygmentize
     },
     "deck_js": {
         "name": "deck.js",
@@ -209,6 +245,21 @@ PROCESSORS = {
     }
 }
 
+class Code(Directive):
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = False
+    has_content = True
+
+    def run(self):
+        language = self.arguments[0]
+        content = self.content
+
+        attrs = {
+            'class': "code lang-" + language
+        }
+
+        return [nodes.literal_block('', "\n".join(content), **attrs)]
 
 class Slide3D(Directive):
 
@@ -244,3 +295,4 @@ class Slide3D(Directive):
         return [node]
 
 directives.register_directive('slide-3d', Slide3D)
+directives.register_directive('code-block', Code)

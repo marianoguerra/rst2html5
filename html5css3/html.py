@@ -23,6 +23,19 @@ def quote(text):
 def nop(text):
     return text
 
+def to_str(value):
+    if isinstance(value, unicode):
+        return value
+    else:
+        return str(value)
+
+def escape_attrs(node):
+    node.attrib = dict([(key.rstrip("_"), str(val))
+        for (key, val) in node.attrib.iteritems()])
+
+    for child in node:
+        escape_attrs(child)
+
 class TagBase(Element):
     "base class for all tags"
 
@@ -32,145 +45,39 @@ class TagBase(Element):
 
     def __init__(self, childs, attrs):
         "add childs and call parent constructor"
-        clean_attrs = dict([(key.rstrip("_"), val)
-            for (key, val) in attrs.iteritems()])
-
         tag = self.__class__.__name__.lower()
-
-        Element.__init__(self, tag, clean_attrs)
+        Element.__init__(self, tag, attrs)
 
         for child in childs:
-            if isinstance(child, basestring):
-                if self.text is None:
-                    self.text = self.maybe_quote(unicode(child))
+            self.append(child)
+
+        escape_attrs(self)
+
+    def append(self, child):
+        if not isinstance(child, Element):
+            if self._children:
+                last_children = self._children[-1]
+                
+                if last_children.tail is None:
+                    last_children.tail = to_str(child)
                 else:
-                    self.text += self.maybe_quote(unicode(child))
+                    last_children.tail += to_str(child)
+
+            elif self.text is None:
+                self.text = to_str(child)
             else:
-                self.append(child)
-
-    def maybe_quote(self, text):
-        if self.QUOTE:
-            return quote(text)
+                self.text += to_str(child)
         else:
-            return text
-
-    def append(self, element):
-        '''override Element.append to support appending strings'''
-
-        if isinstance(element, basestring):
-            if self.text is None:
-                self.text = self.maybe_quote(element)
-            else:
-                self.text += self.maybe_quote(element)
-        else:
-            Element.append(self, element)
-
-    def _format_child(self, child, level=0, increment=1, be_compact=False):
-        """transform childs to string representations"""
-        one_indent = " " * increment
-        indent = one_indent * level
-        cls = self.__class__
-
-        nl = "\n"
-
-        if cls.COMPACT or be_compact:
-            nl = ""
-            indent = ""
-            one_indent = ""
-
-        if isinstance(child, TagBase):
-            result = child.format(level + 1, increment)
-        else:
-            child = unicode(child)
-
-            child = self.maybe_quote(child)
-
-            result = child
-            indent = ""
-            nl = ""
-            one_indent = ""
-
-        return indent + result + nl
-
-    def format(self, level=0, increment=1, be_compact=False):
-        "pretty print the object"
-        one_indent = " " * increment
-        indent = one_indent * level
-        cls = self.__class__
-
-        nl = "\n"
-
-        if cls.COMPACT or be_compact:
-            nl = ""
-            indent = ""
-            one_indent = ""
-
-        attrs = " ".join(['%s="%s"' % (name, val)
-            for (name, val) in self.attrib.iteritems()])
-
-        if attrs:
-            attrs = " " + attrs
-
-        if self.text is None:
-            childs = ""
-        else:
-            childs = self.text
-
-        should_be_compact = False
-        formatted = []
-        for child in list(self):
-            item = self._format_child(child, be_compact=should_be_compact)
-            formatted.append(item)
-            should_be_compact = isinstance(child, basestring)
-
-        childs += "".join(formatted)
-
-        if childs:
-            childs = nl + childs + nl
-
-        return self._format(indent, attrs, childs)
-
-    def _format(self, indent, attrs, childs):
-        cls = self.__class__
-
-        if cls.SELF_CLOSING:
-            return "%s<%s%s />" % (indent, self.tag, attrs)
-        else:
-            return "%s<%s%s>%s%s</%s>" % (indent, self.tag, attrs,
-                    childs, indent, self.tag)
-
-    def to_string(self, level=0):
-        indent = " " * level
-        attrs = " ".join(['%s="%s"' % (name, val)
-            for (name, val) in self.attrib.iteritems()])
-
-        accum = []
-
-        for child in self:
-            if hasattr(child, "to_string"):
-                accum.append(child.to_string(level + 1))
-            else:
-                print "not a tag", child
-
-        childs = "".join(accum)
-
-        return "%s%s(%s) = %s\n%s" % (indent, self.tag, attrs, self.text,
-            childs)
+            Element.append(self, child)
 
     def __repr__(self):
-        self.to_string(0)
+        return ET.tostring(self, "utf-8", "html")
 
     def __str__(self):
         "return a string representation"
-        return self.format(0)
+        return ET.tostring(self, "utf-8", "html")
 
-class Comment(TagBase):
-
-    def __init__(self, *childs, **attrs):
-        TagBase.__init__(self, childs, attrs)
-
-    def _format(self, indent, attrs, childs):
-        return "%s<!--%s%s-->" % (indent, childs, indent)
+Comment = ET.Comment
 
 TAGS = {
     "a": (True, True, False, "Defines a hyperlink"),
@@ -300,13 +207,15 @@ def create_tags(ctx):
             "__init__": __init__
         })
 
-        cls.SELF_CLOSING = self_closing
-        cls.COMPACT = compact
         cls.QUOTE = quote
+        cls.COMPACT = compact
+        cls.SELF_CLOSING = self_closing
 
         ctx[class_name] = cls
 
 create_tags(globals())
+
+DOCTYPE = "<!DOCTYPE html>"
 
 HEADINGS = {
     1: H1,

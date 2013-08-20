@@ -14,8 +14,11 @@ try:
 except:
     pass
 
+import os
 import sys
-sys.path.append(".")
+command = sys.argv[0]
+command_dir = os.path.dirname(command)[:-3]
+sys.path.append(command_dir)
 
 from docutils.core import publish_cmdline, default_description
 
