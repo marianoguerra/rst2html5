@@ -43,28 +43,121 @@ def parse_param_value(value):
     except ValueError:
         return value
 
+DIR_NAME = os.path.dirname(__file__)
 class Writer(writers.Writer):
 
-    default_stylesheet = 'rst2html5.css'
+    default_stylesheet = os.path.join(DIR_NAME, 'rst2html5.css')
 
     default_stylesheet_path = utils.relative_path(
         os.path.join(os.getcwd(), 'dummy'),
-        os.path.join(os.path.dirname(__file__), default_stylesheet))
+        os.path.join(DIR_NAME, default_stylesheet))
+
+    default_stylesheet_dirs = ['.']
+
+    default_template = 'template.txt'
+
+    default_template_path = "."
 
     settings_spec = (
         'HTML-Specific Options',
         None,
-        [('Specify comma separated list of stylesheet URLs. '
+        [('Specify the template file (UTF-8 encoded).  Default is "%s".'
+          % default_template_path,
+          ['--template'],
+          {'default': default_template_path, 'metavar': '<file>'}),
+         ('Comma separated list of stylesheet URLs. '
           'Overrides previous --stylesheet and --stylesheet-path settings.',
           ['--stylesheet'],
-          {'metavar': '<URL>', 'overrides': 'stylesheet_path'}),
-         ('Specify comma separated list of stylesheet paths. '
-          'With --link-stylesheet, '
+          {'metavar': '<URL[,URL,...]>', 'overrides': 'stylesheet_path',
+           'validator': frontend.validate_comma_separated_list}),
+         ('Comma separated list of stylesheet paths. '
+          'Relative paths are expanded if a matching file is found in '
+          'the --stylesheet-dirs. With --link-stylesheet, '
           'the path is rewritten relative to the output HTML file. '
-          'Default: "%s"' % default_stylesheet_path,
+          'Default: "%s"' % default_stylesheet,
           ['--stylesheet-path'],
-          {'metavar': '<file>', 'overrides': 'stylesheet',
-           'default': default_stylesheet_path}),
+          {'metavar': '<file[,file,...]>', 'overrides': 'stylesheet',
+           'validator': frontend.validate_comma_separated_list,
+           'default': [default_stylesheet]}),
+         ('Embed the stylesheet(s) in the output HTML file.  The stylesheet '
+          'files must be accessible during processing. This is the default.',
+          ['--embed-stylesheet'],
+          {'default': 1, 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Link to the stylesheet(s) in the output HTML file. '
+          'Default: embed stylesheets.',
+          ['--link-stylesheet'],
+          {'dest': 'embed_stylesheet', 'action': 'store_false'}),
+         ('Comma-separated list of directories where stylesheets are found. '
+          'Used by --stylesheet-path when expanding relative path arguments. '
+          'Default: "%s"' % default_stylesheet_dirs,
+          ['--stylesheet-dirs'],
+          {'metavar': '<dir[,dir,...]>',
+           'validator': frontend.validate_comma_separated_list,
+           'default': default_stylesheet_dirs}),
+         ('Specify the initial header level.  Default is 1 for "<h1>".  '
+          'Does not affect document title & subtitle (see --no-doc-title).',
+          ['--initial-header-level'],
+          {'choices': '1 2 3 4 5 6'.split(), 'default': '1',
+           'metavar': '<level>'}),
+         ('Specify the maximum width (in characters) for one-column field '
+          'names.  Longer field names will span an entire row of the table '
+          'used to render the field list.  Default is 14 characters.  '
+          'Use 0 for "no limit".',
+          ['--field-name-limit'],
+          {'default': 14, 'metavar': '<level>',
+           'validator': frontend.validate_nonnegative_int}),
+         ('Specify the maximum width (in characters) for options in option '
+          'lists.  Longer options will span an entire row of the table used '
+          'to render the option list.  Default is 14 characters.  '
+          'Use 0 for "no limit".',
+          ['--option-limit'],
+          {'default': 14, 'metavar': '<level>',
+           'validator': frontend.validate_nonnegative_int}),
+         ('Format for footnote references: one of "superscript" or '
+          '"brackets".  Default is "brackets".',
+          ['--footnote-references'],
+          {'choices': ['superscript', 'brackets'], 'default': 'brackets',
+           'metavar': '<format>',
+           'overrides': 'trim_footnote_reference_space'}),
+         ('Format for block quote attributions: one of "dash" (em-dash '
+          'prefix), "parentheses"/"parens", or "none".  Default is "dash".',
+          ['--attribution'],
+          {'choices': ['dash', 'parentheses', 'parens', 'none'],
+           'default': 'dash', 'metavar': '<format>'}),
+         ('Remove extra vertical whitespace between items of "simple" bullet '
+          'lists and enumerated lists.  Default: enabled.',
+          ['--compact-lists'],
+          {'default': 1, 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Disable compact simple bullet and enumerated lists.',
+          ['--no-compact-lists'],
+          {'dest': 'compact_lists', 'action': 'store_false'}),
+         ('Remove extra vertical whitespace between items of simple field '
+          'lists.  Default: enabled.',
+          ['--compact-field-lists'],
+          {'default': 1, 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Disable compact simple field lists.',
+          ['--no-compact-field-lists'],
+          {'dest': 'compact_field_lists', 'action': 'store_false'}),
+         ('Added to standard table classes. '
+          'Defined styles: "borderless". Default: ""',
+          ['--table-style'],
+          {'default': ''}),
+         ('Math output format, one of "MathML", "HTML", "MathJax" '
+          'or "LaTeX". Default: "HTML math.css"',
+          ['--math-output'],
+          {'default': 'HTML math.css'}),
+         ('Omit the XML declaration.  Use with caution.',
+          ['--no-xml-declaration'],
+          {'dest': 'xml_declaration', 'default': 1, 'action': 'store_false',
+           'validator': frontend.validate_boolean}),
+         ('Obfuscate email addresses to confuse harvesters while still '
+          'keeping email links usable with standards-compliant browsers.',
+          ['--cloak-email-addresses'],
+          {'action': 'store_true', 'validator': frontend.validate_boolean}),
+
          ('Embed the content (css, js, etc) in the output HTML file.  The content '
           'files must be accessible during processing. This is the default.',
           ['--embed-content'],
@@ -72,23 +165,7 @@ class Writer(writers.Writer):
            'validator': frontend.validate_boolean}),
          ('Add a favicon to the generated page',
           ['--favicon'],
-          {'default': None}),
-         ('Link to the content in the output HTML file. '
-          'Default: embed content.',
-          ['--link-content'],
-          {'dest': 'embed_content', 'action': 'store_false'}),
-         ('Specify the initial header level.  Default is 1 for "<h1>".  '
-          'Does not affect document title & subtitle (see --no-doc-title).',
-          ['--initial-header-level'],
-          {'choices': '1 2 3 4 5 6'.split(), 'default': '1',
-           'metavar': '<level>'}),
-         ('Format for footnote references: one of "superscript" or '
-          '"brackets".  Default is "brackets".',
-          ['--footnote-references'],
-          {'choices': ['superscript', 'brackets'], 'default': 'brackets',
-           'metavar': '<format>',
-           'overrides': 'trim_footnote_reference_space'})
-         ])
+          {'default': None}),])
 
     settings_defaults = {
         'output_encoding_error_handler': 'xmlcharrefreplace'
