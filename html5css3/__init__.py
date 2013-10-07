@@ -513,11 +513,11 @@ class HTMLTranslator(nodes.NodeVisitor):
         if ids:
             atts['id'] = ids[0]
 
+            # ids must be appended as first children to the tag
             for id in ids[1:]:
-                self.current.append(Span(id=id))
+                tag.append(Span(id=id))
 
         tag.attrib.update(atts)
-
 
     def pop_parent(self, node):
         self.current = self.parents.pop()
@@ -643,7 +643,8 @@ class HTMLTranslator(nodes.NodeVisitor):
         self._stack(tag, node)
 
     def visit_target(self, node):
-        self._stack(Span(class_="target"), node)
+        append_tag = not ('refuri' in node or 'refid' in node or 'refname' in node)
+        self._stack(Span(class_="target"), node, append_tag)
 
     def visit_author(self, node):
         if isinstance(self.current, Ul):
