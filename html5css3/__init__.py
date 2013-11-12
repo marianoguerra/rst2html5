@@ -220,7 +220,20 @@ class Writer(writers.Writer):
                     parsed_val = parse_param_value(val)
                     pairs.append((key, parsed_val))
 
-                params = dict(pairs)
+                params = {}
+                # a key that appears more than once is converted into a list
+                # of the found values
+                for key, val in pairs:
+                    if key in params:
+                        current_val = params[key]
+
+                        if isinstance(current_val, list):
+                            current_val.append(val)
+                        else:
+                            params[key] = [current_val, val]
+                    else:
+                        params[key] = val
+
                 processor(tree, embed, params)
 
         self.output = DOCTYPE

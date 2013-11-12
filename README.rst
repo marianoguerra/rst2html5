@@ -63,6 +63,14 @@ strings, for example here is an example of options::
 
     --some-processor-opts theme=serif,count=4,verbose=true,foo=null
 
+if a key is passed more than once that parameter is passed to the processor as a list of values, note that if only one value is passed it's passed as it is, the convenience function as_list is provided to handle this case if you want to always receive a list.
+
+to add custom js files to the resulting file you can use the --add-js post processor like this::
+
+    rst2html5 slides.rst --add-js --add-js-opts path=foo.js,path=bar.js
+
+that command will add foo.js and bar.js as scripts in the resulting html file.
+
 see it
 ------
 

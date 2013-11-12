@@ -11,16 +11,26 @@ BASE_PATH = os.path.dirname(__file__)
 
 join_path = os.path.join
 
+def as_list(val):
+    """return a list with val if val is not already a list, val otherwise"""
+    if isinstance(val, list):
+        return val
+    else:
+        return [val]
+
 def abspath(path):
     return join_path(BASE_PATH, path)
 
-def js(path, embed=True):
-    content = open(abspath(path)).read().decode('utf-8')
+def js_fullpath(path, embed=True):
+    content = open(path).read().decode('utf-8')
 
     if embed:
         return html.Script(content)
     else:
         return html.Script(src=path)
+
+def js(path, embed=True):
+    js_fullpath(abspath(path), embed)
 
 def css(path, embed=True):
     content = open(abspath(path)).read().decode('utf-8')
@@ -90,6 +100,14 @@ def deckjs(tree, embed=True, params=None):
     body.append(js(path("extensions", "navigation", "deck.navigation.js"), embed))
 
     body.append(html.Script("$(function () { $.deck('.slide'); });"))
+
+def add_js(tree, embed=True, params=None):
+    params = params or {}
+    paths = as_list(params.get("path", []))
+
+    body = tree[1]
+    for path in paths:
+        body.append(js_fullpath(path, embed))
 
 def revealjs(tree, embed=True, params=None):
     head = tree[0]
@@ -242,6 +260,10 @@ PROCESSORS = {
     "embed_images": {
         "name": "embed images",
         "processor": embed_images
+    },
+    "add_js": {
+        "name": "add js files",
+        "processor": add_js
     }
 }
 
