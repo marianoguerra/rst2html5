@@ -30,7 +30,7 @@ def js_fullpath(path, embed=True):
         return html.Script(src=path)
 
 def js(path, embed=True):
-    js_fullpath(abspath(path), embed)
+    return js_fullpath(abspath(path), embed)
 
 def css(path, embed=True):
     content = open(abspath(path)).read().decode('utf-8')
