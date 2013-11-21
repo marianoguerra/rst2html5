@@ -2,6 +2,7 @@ import os
 
 import html5css3
 import html
+import json
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -113,7 +114,7 @@ def revealjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
     params = params or {}
-    theme_name = params.get("theme", "default") + ".css"
+    theme_name = params.pop("theme", "default") + ".css"
 
     def path(*args):
         return join_path("thirdparty", "revealjs", *args)
@@ -139,7 +140,10 @@ def revealjs(tree, embed=True, params=None):
 
     head.append(css("rst2html5-reveal.css", embed))
 
-    body.append(html.Script("$(function () { Reveal.initialize({history:true}); });"))
+    params['history'] = True
+    param_s = json.dumps(params)
+    body.append(
+        html.Script("$(function () { Reveal.initialize(%s); });" % param_s))
 
 def impressjs(tree, embed=True, params=None):
     head = tree[0]
