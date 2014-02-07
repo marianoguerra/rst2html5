@@ -51,6 +51,10 @@ highlight, this just does the code parsing and html transformation.
 to embed images inside the html file to have a single .html file to distribute
 add the --embed-images option.
 
+to add `mathjax <http://mathjax.org>`_ support::
+
+    ./bin/rst2html5 --mathjax examples/mathjax.rst mathjax.html
+
 post processors support optional parameters, they are passed with a command
 line option with the same name as the post processor appending "-opts" at the
 end, for example to change the revealjs theme you can do::
