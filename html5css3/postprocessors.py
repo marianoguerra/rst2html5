@@ -231,8 +231,39 @@ def pygmentize(tree, embed=True, params=None):
                 block.tag = 'div'
                 block.text = new_content
 
+def mathjax(tree, embed=True, params=None):
+    body = tree[1]
+    params = params or {}
+    config_path = params.get("config")
+    url = params.get("url", "http://cdn.mathjax.org/mathjax/latest/MathJax.js")
+
+
+    if config_path is None:
+        content = """
+      MathJax.Hub.Config({
+        extensions: [],
+        jax: ["input/TeX", "output/HTML-CSS"],
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+          displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+          processEscapes: true
+        },
+        "HTML-CSS": { availableFonts: ["TeX"] }
+      });
+        """
+    else:
+        with open(config_path) as f_in:
+            content = f_in.read()
+
+    body.append(html.Script(content, type="text/x-mathjax-config"))
+    body.append(html.Script(src=url))
+
 
 PROCESSORS = {
+    "mathjax": {
+        "name": "add mathjax support",
+        "processor": mathjax
+    },
     "jquery": {
         "name": "add jquery",
         "processor": jquery
