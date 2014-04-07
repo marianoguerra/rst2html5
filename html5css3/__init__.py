@@ -33,6 +33,7 @@ import docutils
 
 from docutils import frontend, nodes, utils, writers, languages
 
+import html
 from html import *
 # import default post processors so they register
 import postprocessors
@@ -322,6 +323,11 @@ def skip(node, translator):
 def swallow_childs(node, translator):
     return Span(class_="remove-me")
 
+def raw(node, translator):
+    result = html.raw(node.astext())
+    translator._append(result, node)
+    return result
+
 NODES = {
     "abbreviation": Abbr,
     "acronym": Abbr,
@@ -400,7 +406,7 @@ NODES = {
     "option_string": skip,
     "paragraph": P,
     "problematic": problematic,
-    "raw": None,
+    "raw": raw,
     "reference": None,
     "row": Tr,
     "rubric": None,

@@ -215,6 +215,27 @@ def create_tags(ctx):
 
 create_tags(globals())
 
+class Raw(Element):
+    def __init__(self, content):
+        self.content = ET.fromstring(content)
+        Element.__init__(self, self.content.tag, self.content.attrib)
+
+    def __iter__(self):
+        yield self.content
+
+    def __repr__(self):
+        return ET.tostring(self.content, "utf-8", "html")
+
+    def __str__(self):
+        "return a string representation"
+        return ET.tostring(self.content, "utf-8", "html")
+
+    def append(self, content):
+        pass
+
+def raw(content):
+    return Raw(content)
+
 DOCTYPE = "<!DOCTYPE html>"
 
 HEADINGS = {
