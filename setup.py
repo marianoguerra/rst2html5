@@ -8,8 +8,9 @@ except ImportError:
 
 setup(
     name='rst2html5-tools',
-    version='0.2',
+    version='0.2.1',
     author='Mariano Guerra',
+    description="Transform reStructuredText documents to html5 + twitter's bootstrap css, deck.js or reveal.js",
     author_email='luismarianoguerra@gmail.com',
     url='https://github.com/marianoguerra/rst2html5',
     long_description=open('README.rst').read(),
@@ -36,6 +37,7 @@ setup(
         'Topic :: Documentation',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Text Processing',
+        'Topic :: Text Processing :: Markup',
         'Topic :: Utilities',
     ],
 )
