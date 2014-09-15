@@ -18,8 +18,6 @@ __docformat__ = 'reStructuredText'
 
 import os
 import re
-import sys
-import time
 import json
 
 import os.path
@@ -29,12 +27,9 @@ try:
 except ImportError:
     Image = None
 
-import docutils
-
 from docutils import frontend, nodes, utils, writers, languages
-
 import html
-from html import *
+from .html import *
 # import default post processors so they register
 import postprocessors
 
