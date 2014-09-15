@@ -23,7 +23,6 @@ to generate a basic html document::
 
 to generate a set of slides using deck.js::
 
-        rst2html5
         rst2html5 --deck-js --pretty-print-code --embed-content examples/slides.rst > deck.html
 
 to generate a set of slides using reveal.js::

@@ -155,11 +155,11 @@ def impressjs(tree, embed=True, params=None):
     # remove the default style
     #head.remove(head.find("./style"))
     add_class(body, "impress-not-supported")
-    failback = html.Div('<div class="fallback-message">' + 
-        '<p>Your browser <b>doesn\'t support the features required</b> by' + 
-        'impress.js, so you are presented with a simplified version of this' + 
-        'presentation.</p>' + 
-        '<p>For the best experience please use the latest <b>Chrome</b>,' + 
+    failback = html.Div('<div class="fallback-message">' +
+        '<p>Your browser <b>doesn\'t support the features required</b> by' +
+        'impress.js, so you are presented with a simplified version of this' +
+        'presentation.</p>' +
+        '<p>For the best experience please use the latest <b>Chrome</b>,' +
         '<b>Safari</b> or <b>Firefox</b> browser.</p></div>')
 
     slides = html.Div(id="impress")
@@ -340,7 +340,7 @@ class Slide3D(Directive):
     def run(self):
         attributes = {}
 
-        for key, value in self.options.iteritems():
+        for key, value in self.options.items():
             if key in ('class', 'id', 'title'):
                 attributes[key] = value
             else:
