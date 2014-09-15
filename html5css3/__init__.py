@@ -12,9 +12,8 @@ http://twitter.github.com/bootstrap/
 
 this code is based on html4css1
 """
-
+from __future__ import absolute_import
 __docformat__ = 'reStructuredText'
-
 
 import os
 import re
@@ -28,10 +27,15 @@ except ImportError:
     Image = None
 
 from docutils import frontend, nodes, utils, writers, languages
-import html
+from . import html
 from .html import *
 # import default post processors so they register
-import postprocessors
+from . import postprocessors
+
+
+if IS_PY3:
+    basestring = str
+
 
 def parse_param_value(value):
     try:
@@ -203,7 +207,7 @@ class Writer(writers.Writer):
         if favicon_path:
             tree[0].append(Link(href=favicon_path, rel="shortcut icon"))
 
-        for (key, processor) in Writer.post_processors.iteritems():
+        for (key, processor) in Writer.post_processors.items():
             if getattr(settings, key):
 
                 params_str = getattr(settings, key + "_opts") or ""
@@ -235,7 +239,7 @@ class Writer(writers.Writer):
         self.output = DOCTYPE
         self.output += str(tree)
 
-for (key, data) in postprocessors.PROCESSORS.iteritems():
+for (key, data) in postprocessors.PROCESSORS.items():
     Writer.add_postprocessor(data["name"], key, data["processor"])
 
 
@@ -804,7 +808,7 @@ class HTMLTranslator(nodes.NodeVisitor):
     def get_known_attributes(self, node):
         attrs = {}
 
-        for attr, value in node.attributes.iteritems():
+        for attr, value in node.attributes.items():
             if attr.startswith("data-") or attr in {'title', 'class', 'id'}:
                 attrs[attr] = value
 
