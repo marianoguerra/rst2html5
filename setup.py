@@ -13,7 +13,6 @@ setup(
     description="Transform reStructuredText documents to html5 + twitter's bootstrap css, deck.js or reveal.js",
     author_email='luismarianoguerra@gmail.com',
     url='https://github.com/marianoguerra/rst2html5',
-    description='Transform restructuredtext documents to html5',
     long_description=open('README.rst').read(),
     packages=['html5css3'],
     package_data={'html5css3': ['thirdparty/*/*.*']},
