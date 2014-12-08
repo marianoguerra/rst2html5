@@ -56,6 +56,12 @@ end, for example to change the revealjs theme you can do::
 
         rst2html5 --jquery --reveal-js --reveal-js-opts theme=serif examples/slides.rst > reveal.html
 
+you can also pass the base path to the theme css file::
+
+        rst2html5 --jquery --reveal-js --reveal-js-opts theme=serif,themepath=~/mytheme examples/slides.rst > reveal.html
+
+it will look at the theme at ~/mytheme/serif.css
+
 options are passed as a comma separated list of key value pairs separated with
 an equal sign, values are parsed as json, if parsing fails they are passed as
 strings, for example here is an example of options::
