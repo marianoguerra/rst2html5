@@ -13,6 +13,14 @@ via pip::
 
         pip install rst2html5-tools
 
+locally::
+
+        git clone https://github.com/marianoguerra/rst2html5.git
+        cd rst2html5
+        git submodule init
+        git submodule update
+
+        sudo python setup.py install
 
 use it
 ------
