@@ -97,3 +97,12 @@ clone and send us a pull request! ::
     cd rst2html5
     git submodule update --init
     python setup.py develop
+
+note to self to release
+-----------------------
+
+* update version on setup.py
+
+::
+
+    python setup.py sdist upload
