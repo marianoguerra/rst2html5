@@ -2,6 +2,7 @@ import os
 
 import html5css3
 import html
+import json
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -11,16 +12,26 @@ BASE_PATH = os.path.dirname(__file__)
 
 join_path = os.path.join
 
+def as_list(val):
+    """return a list with val if val is not already a list, val otherwise"""
+    if isinstance(val, list):
+        return val
+    else:
+        return [val]
+
 def abspath(path):
     return join_path(BASE_PATH, path)
 
-def js(path, embed=True):
-    content = open(abspath(path)).read().decode('utf-8')
+def js_fullpath(path, embed=True):
+    content = open(path).read().decode('utf-8')
 
     if embed:
         return html.Script(content)
     else:
         return html.Script(src=path)
+
+def js(path, embed=True):
+    return js_fullpath(abspath(path), embed)
 
 def css(path, embed=True):
     content = open(abspath(path)).read().decode('utf-8')
@@ -91,14 +102,28 @@ def deckjs(tree, embed=True, params=None):
 
     body.append(html.Script("$(function () { $.deck('.slide'); });"))
 
+def add_js(tree, embed=True, params=None):
+    params = params or {}
+    paths = as_list(params.get("path", []))
+
+    body = tree[1]
+    for path in paths:
+        body.append(js_fullpath(path, embed))
+
 def revealjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
     params = params or {}
-    theme_name = params.get("theme", "default") + ".css"
+    theme_name = params.pop("theme", "default") + ".css"
+    theme_base_dir = params.pop("themepath", None)
 
     def path(*args):
         return join_path("thirdparty", "revealjs", *args)
+
+    if theme_base_dir:
+        theme_path = join_path(os.path.expanduser(theme_base_dir), theme_name)
+    else:
+        theme_path = path("css", "theme", theme_name)
 
     add_class(body, "reveal")
     slides = html.Div(class_="slides")
@@ -112,7 +137,7 @@ def revealjs(tree, embed=True, params=None):
     # <link rel="stylesheet" href="css/reveal.css">
     # <link rel="stylesheet" href="css/theme/default.css" id="theme">
     head.append(css(path("css", "reveal.css"), embed))
-    head.append(css(path("css", "theme", theme_name), embed))
+    head.append(css(theme_path, embed))
 
     # <script src="lib/js/head.min.js"></script>
     # <script src="js/reveal.min.js"></script>
@@ -121,7 +146,10 @@ def revealjs(tree, embed=True, params=None):
 
     head.append(css("rst2html5-reveal.css", embed))
 
-    body.append(html.Script("$(function () { Reveal.initialize({history:true}); });"))
+    params['history'] = True
+    param_s = json.dumps(params)
+    body.append(
+        html.Script("$(function () { Reveal.initialize(%s); });" % param_s))
 
 def impressjs(tree, embed=True, params=None):
     head = tree[0]
@@ -133,11 +161,11 @@ def impressjs(tree, embed=True, params=None):
     # remove the default style
     #head.remove(head.find("./style"))
     add_class(body, "impress-not-supported")
-    failback = html.Div('<div class="fallback-message">' + 
-        '<p>Your browser <b>doesn\'t support the features required</b> by' + 
-        'impress.js, so you are presented with a simplified version of this' + 
-        'presentation.</p>' + 
-        '<p>For the best experience please use the latest <b>Chrome</b>,' + 
+    failback = html.Div('<div class="fallback-message">' +
+        '<p>Your browser <b>doesn\'t support the features required</b> by' +
+        'impress.js, so you are presented with a simplified version of this' +
+        'presentation.</p>' +
+        '<p>For the best experience please use the latest <b>Chrome</b>,' +
         '<b>Safari</b> or <b>Firefox</b> browser.</p></div>')
 
     slides = html.Div(id="impress")
@@ -209,8 +237,39 @@ def pygmentize(tree, embed=True, params=None):
                 block.tag = 'div'
                 block.text = new_content
 
+def mathjax(tree, embed=True, params=None):
+    body = tree[1]
+    params = params or {}
+    config_path = params.get("config")
+    url = params.get("url", "http://cdn.mathjax.org/mathjax/latest/MathJax.js")
+
+
+    if config_path is None:
+        content = """
+      MathJax.Hub.Config({
+        extensions: [],
+        jax: ["input/TeX", "output/HTML-CSS"],
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+          displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+          processEscapes: true
+        },
+        "HTML-CSS": { availableFonts: ["TeX"] }
+      });
+        """
+    else:
+        with open(config_path) as f_in:
+            content = f_in.read()
+
+    body.append(html.Script(content, type="text/x-mathjax-config"))
+    body.append(html.Script(src=url))
+
 
 PROCESSORS = {
+    "mathjax": {
+        "name": "add mathjax support",
+        "processor": mathjax
+    },
     "jquery": {
         "name": "add jquery",
         "processor": jquery
@@ -242,6 +301,10 @@ PROCESSORS = {
     "embed_images": {
         "name": "embed images",
         "processor": embed_images
+    },
+    "add_js": {
+        "name": "add js files",
+        "processor": add_js
     }
 }
 
@@ -283,7 +346,7 @@ class Slide3D(Directive):
     def run(self):
         attributes = {}
 
-        for key, value in self.options.iteritems():
+        for key, value in self.options.items():
             if key in ('class', 'id', 'title'):
                 attributes[key] = value
             else:
@@ -294,5 +357,65 @@ class Slide3D(Directive):
 
         return [node]
 
+class Video(Directive):
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = False
+    has_content = False
+    option_spec = {
+            'autoplay': bool,
+            'preload': bool,
+            'poster': str,
+            'controls': bool,
+            'height': int,
+            'width': int,
+            'loop': bool,
+            'muted': bool,
+            'class': directives.unchanged,
+            'id': directives.unchanged,
+            'title': directives.unchanged
+    }
+
+    def run(self):
+        src = self.arguments[0]
+        opts = self.options
+
+        code = '<video src="%s"' % src
+
+        if opts.get('controls'):
+            code += ' controls="true"'
+
+        if opts.get('muted'):
+            code += ' muted="true"'
+
+        if opts.get('loop'):
+            code += ' loop="true"'
+
+        if opts.get('autoplay'):
+            code += ' autoplay="true"'
+
+        preload = opts.get('preload')
+
+        width = opts.get('width')
+        if width is not None:
+            code += ' width="%s"' % width
+
+        height = opts.get('height')
+        if height is not None:
+            code += ' height="%s"' % height
+
+        poster = opts.get('poster')
+        if poster is not None:
+            code += ' poster="%s"' % poster
+
+        if preload:
+            if preload in ['none', 'metadata', 'auto']:
+                code += ' preload="%s"' % preload
+
+        code += '></video>'
+
+        return [nodes.raw('', code, format='html')]
+
 directives.register_directive('slide-3d', Slide3D)
 directives.register_directive('code-block', Code)
+directives.register_directive('video', Video)

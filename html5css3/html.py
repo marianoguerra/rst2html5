@@ -1,6 +1,13 @@
 '''classes to ease the creation of html documents'''
 
 import xml.etree.ElementTree as ET
+import sys
+
+IS_PY3 = sys.version[0] == '3'
+
+if IS_PY3:
+    unicode = str
+
 
 if callable(ET.Element):
     class Element(ET._ElementInterface, object):
@@ -26,12 +33,11 @@ def nop(text):
 def to_str(value):
     if isinstance(value, unicode):
         return value
-    else:
-        return str(value)
+    return unicode(value)
 
 def escape_attrs(node):
     node.attrib = dict([(key.rstrip("_"), str(val))
-        for (key, val) in node.attrib.iteritems()])
+        for (key, val) in node.attrib.items()])
 
     for child in node:
         escape_attrs(child)
@@ -57,7 +63,7 @@ class TagBase(Element):
         if not isinstance(child, Element):
             if self._children:
                 last_children = self._children[-1]
-                
+
                 if last_children.tail is None:
                     last_children.tail = to_str(child)
                 else:
@@ -68,14 +74,17 @@ class TagBase(Element):
             else:
                 self.text += to_str(child)
         else:
-            Element.append(self, child)
+            self._children.append(child)
 
     def __repr__(self):
         return ET.tostring(self, "utf-8", "html")
 
     def __str__(self):
         "return a string representation"
-        return ET.tostring(self, "utf-8", "html")
+        text = ET.tostring(self, "utf-8", "html")
+        if IS_PY3:
+            return text.decode('utf8')
+        return text
 
 Comment = ET.Comment
 
@@ -195,7 +204,7 @@ TAGS = {
 def create_tags(ctx):
     "create all classes and put them in ctx"
 
-    for (tag, info) in TAGS.iteritems():
+    for (tag, info) in TAGS.items():
         class_name = tag.title()
         quote, compact, self_closing, docs = info
 
@@ -214,6 +223,26 @@ def create_tags(ctx):
         ctx[class_name] = cls
 
 create_tags(globals())
+
+class Raw(Element):
+    def __init__(self, content):
+        el = ET.fromstring(content)
+        Element.__init__(self, el.tag, el.attrib)
+        self.text = el.text
+        self.tail = el.tail
+
+    def __repr__(self):
+        return ET.tostring(self.content, "utf-8", "html")
+
+    def __str__(self):
+        "return a string representation"
+        return ET.tostring(self.content, "utf-8", "html")
+
+    def append(self, content):
+        pass
+
+def raw(content):
+    return Raw(content)
 
 DOCTYPE = "<!DOCTYPE html>"
 

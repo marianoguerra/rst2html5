@@ -3,4 +3,4 @@
 *.pyc
 build
 dist
-rst2html5.egg-info
+rst2html5_tools.egg-info
