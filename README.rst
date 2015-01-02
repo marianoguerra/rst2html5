@@ -95,6 +95,10 @@ you can see the examples from the above commands here:
 * http://marianoguerra.github.com/rst2html5/output/impress.html
 * http://marianoguerra.github.com/rst2html5/output/bootstrap.html
 
+example of video directive
+
+* http://marianoguerra.github.com/rst2html5/output/videos.html
+
 
 want to contribute ?
 --------------------
