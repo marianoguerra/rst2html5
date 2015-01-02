@@ -357,5 +357,65 @@ class Slide3D(Directive):
 
         return [node]
 
+class Video(Directive):
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = False
+    has_content = False
+    option_spec = {
+            'autoplay': bool,
+            'preload': bool,
+            'poster': str,
+            'controls': bool,
+            'height': int,
+            'width': int,
+            'loop': bool,
+            'muted': bool,
+            'class': directives.unchanged,
+            'id': directives.unchanged,
+            'title': directives.unchanged
+    }
+
+    def run(self):
+        src = self.arguments[0]
+        opts = self.options
+
+        code = '<video src="%s"' % src
+
+        if opts.get('controls'):
+            code += ' controls="true"'
+
+        if opts.get('muted'):
+            code += ' muted="true"'
+
+        if opts.get('loop'):
+            code += ' loop="true"'
+
+        if opts.get('autoplay'):
+            code += ' autoplay="true"'
+
+        preload = opts.get('preload')
+
+        width = opts.get('width')
+        if width is not None:
+            code += ' width="%s"' % width
+
+        height = opts.get('height')
+        if height is not None:
+            code += ' height="%s"' % height
+
+        poster = opts.get('poster')
+        if poster is not None:
+            code += ' poster="%s"' % poster
+
+        if preload:
+            if preload in ['none', 'metadata', 'auto']:
+                code += ' preload="%s"' % preload
+
+        code += '></video>'
+
+        return [nodes.raw('', code, format='html')]
+
 directives.register_directive('slide-3d', Slide3D)
 directives.register_directive('code-block', Code)
+directives.register_directive('video', Video)

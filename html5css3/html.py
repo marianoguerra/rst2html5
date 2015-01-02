@@ -226,11 +226,10 @@ create_tags(globals())
 
 class Raw(Element):
     def __init__(self, content):
-        self.content = ET.fromstring(content)
-        Element.__init__(self, self.content.tag, self.content.attrib)
-
-    def __iter__(self):
-        yield self.content
+        el = ET.fromstring(content)
+        Element.__init__(self, el.tag, el.attrib)
+        self.text = el.text
+        self.tail = el.tail
 
     def __repr__(self):
         return ET.tostring(self.content, "utf-8", "html")
