@@ -185,7 +185,6 @@ def bootstrap_css(tree, embed=True, params=None):
     head = tree[0]
 
     head.append(css(join_path("thirdparty", "bootstrap.css"), embed))
-    head.append(css("rst2html5.css", embed))
 
 def embed_images(tree, embed=True, params=None):
     import base64
