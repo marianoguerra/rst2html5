@@ -236,6 +236,10 @@ class Writer(writers.Writer):
 
                 processor(tree, embed, params)
 
+        # tell the visitor to append the default stylesheets
+        # we call it after the postprocessors to make sure it haves precedence
+        visitor.append_default_stylesheets()
+
         self.output = DOCTYPE
         self.output += str(tree)
 
@@ -461,6 +465,8 @@ class HTMLTranslator(nodes.NodeVisitor):
             Meta(charset=self.content_type),
             Title(self.title))
 
+    def append_default_stylesheets(self):
+        """ Appends the default styles defined on the translator settings. """
         styles = utils.get_stylesheet_list(self.settings)
 
         for style in styles:
