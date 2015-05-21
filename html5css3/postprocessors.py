@@ -71,7 +71,6 @@ def deckjs(tree, embed=True, params=None):
     def path(*args):
         return join_path("thirdparty", "deckjs", *args)
 
-    head.remove(head.find("./style"))
     add_class(body, "deck-container")
 
     for section in tree.findall(".//section"):

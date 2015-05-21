@@ -1,3 +1,7 @@
+body.reveal {
+    margin: 0;
+}
+
 .hide-title>header{
  display: none
 }
