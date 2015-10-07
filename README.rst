@@ -91,9 +91,13 @@ enable it::
 
     --pretty-print-code
 
-add language specific lexers:
+add language specific lexers::
 
     --pretty-print-code-opts langs=clj:erlang
+
+Note: you have to pass both options when passing opts to prettify like this::
+
+    --pretty-print-code --pretty-print-code-opts langs=clj:erlang
 
 that is, the name of the languages separated by colons, available lexers at the
 moment of this writing are:
