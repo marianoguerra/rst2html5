@@ -48,6 +48,13 @@ def pretty_print_code(tree, embed=True, params=None):
     body.append(js(join_path("thirdparty", "prettify.js"), embed))
     body.append(html.Script("$(function () { prettyPrint() })"))
 
+    langs_str = params.get("langs", "")
+    langs = [x.strip() for x in langs_str.split(":") if x.strip() != ""]
+
+    for lang in langs:
+        lang_path = join_path("thirdparty", "prettify", "lang-" + lang + ".js")
+        body.append(js(lang_path, embed))
+
     head.append(css(join_path("thirdparty", "prettify.css")))
 
 def jquery(tree, embed=True, params=None):

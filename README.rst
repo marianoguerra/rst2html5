@@ -84,6 +84,51 @@ to add custom js files to the resulting file you can use the --add-js post proce
 
 that command will add foo.js and bar.js as scripts in the resulting html file.
 
+Pretty Print Code Notes
+.......................
+
+enable it::
+
+    --pretty-print-code
+
+add language specific lexers:
+
+    --pretty-print-code-opts langs=clj:erlang
+
+that is, the name of the languages separated by colons, available lexers at the
+moment of this writing are:
+
+* apollo
+* basic
+* clj
+* css
+* dart
+* erlang
+* go
+* hs
+* lisp
+* llvm
+* lua
+* matlab
+* ml
+* mumps
+* n
+* pascal
+* proto
+* rd
+* r
+* scala
+* sql
+* tcl
+* tex
+* vb
+* vhdl
+* wiki
+* xq
+* yaml
+
+you can see the available lexers under html5css3/thirdparty/prettify/lang-\*.js
+
 see it
 ------
 
