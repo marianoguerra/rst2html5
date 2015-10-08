@@ -25,10 +25,10 @@ hi!
 
 .. image:: data/spongebob.jpg
 
+.. class:: hide
+
 what does it do?
 ================
-
-* stuff like this presentation
 
 some code
 ---------
@@ -39,6 +39,9 @@ some code
 
     import antigravity
     the_anwser = 42
+
+more code
+---------
 
 .. class:: prettyprint lang-html
 

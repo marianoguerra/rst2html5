@@ -122,6 +122,7 @@ def revealjs(tree, embed=True, params=None):
     params = params or {}
     theme_name = params.pop("theme", "default") + ".css"
     theme_base_dir = params.pop("themepath", None)
+    printpdf = params.pop("printpdf", False)
 
     def path(*args):
         return join_path("thirdparty", "revealjs", *args)
@@ -144,6 +145,9 @@ def revealjs(tree, embed=True, params=None):
     # <link rel="stylesheet" href="css/theme/default.css" id="theme">
     head.append(css(path("css", "reveal.css"), embed))
     head.append(css(theme_path, embed))
+
+    if printpdf:
+        head.append(css(path("css", "print", "pdf.css"), embed))
 
     # <script src="lib/js/head.min.js"></script>
     # <script src="js/reveal.min.js"></script>

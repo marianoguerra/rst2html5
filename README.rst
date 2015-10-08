@@ -133,6 +133,15 @@ moment of this writing are:
 
 you can see the available lexers under html5css3/thirdparty/prettify/lang-\*.js
 
+RevealJs Notes
+..............
+
+to print pass --reveal-js-opts pdfprint=true, for example::
+
+    rst2html5 --jquery --reveal-js --reveal-js-opts printpdf=true examples/slides.rst > reveal-print.html
+
+this can be used to open with chrome or chromium and print as pdf as described here: https://github.com/hakimel/reveal.js#pdf-export
+
 see it
 ------
 
