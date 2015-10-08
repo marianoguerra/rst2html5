@@ -136,7 +136,7 @@ you can see the available lexers under html5css3/thirdparty/prettify/lang-\*.js
 RevealJs Notes
 ..............
 
-to print pass --reveal-js-opts pdfprint=true, for example::
+to print pass --reveal-js-opts printpdf=true, for example::
 
     rst2html5 --jquery --reveal-js --reveal-js-opts printpdf=true examples/slides.rst > reveal-print.html
 
