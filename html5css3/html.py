@@ -9,7 +9,7 @@ if IS_PY3:
     unicode = str
 
 
-if callable(ET.Element):
+if callable(ET.Element) and hasattr(ET, "_ElementInterface"):
     class Element(ET._ElementInterface, object):
         pass
 else:
