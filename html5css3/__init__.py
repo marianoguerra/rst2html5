@@ -27,6 +27,8 @@ except ImportError:
     Image = None
 
 from docutils import frontend, nodes, utils, writers, languages
+import xml.etree.ElementTree
+
 from . import html
 from .html import *
 # import default post processors so they register
@@ -327,9 +329,13 @@ def swallow_childs(node, translator):
     return Span(class_="remove-me")
 
 def raw(node, translator):
-    result = html.raw(node.astext())
-    translator._append(result, node)
-    return result
+    el = xml.etree.ElementTree.fromstring('<div>' + node.astext() + '</div>')
+    children = [html.tag_from_element(c) for c in el]
+    for child in children:
+        translator._append(child, node)
+    node.children[:] = []
+    return children[-1]
+
 
 NODES = {
     "abbreviation": Abbr,
