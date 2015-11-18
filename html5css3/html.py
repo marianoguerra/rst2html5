@@ -224,25 +224,26 @@ def create_tags(ctx):
 
 create_tags(globals())
 
-class Raw(Element):
-    def __init__(self, content):
-        el = ET.fromstring(content)
-        Element.__init__(self, el.tag, el.attrib)
-        self.text = el.text
-        self.tail = el.tail
 
-    def __repr__(self):
-        return ET.tostring(self.content, "utf-8", "html")
+def tag_from_element(el):
+    """
+    Convert an Element into a Tag.
 
-    def __str__(self):
-        "return a string representation"
-        return ET.tostring(self.content, "utf-8", "html")
+    ``el`` is an instance of ``Element``. Returns an instance of the
+    corresponding subclass of ``TagBase``.
+    """
+    try:
+        cls = globals()[el.tag.title()]
+        if not issubclass(cls, TagBase):
+            raise KeyError()
+    except KeyError:
+        raise ValueError("TagBase doesn't have a subclass for '%s'." % el.tag)
+    children = [tag_from_element(c) for c in el]
+    tag = cls(*children, **el.attrib)
+    tag.text = el.text
+    tag.tail = el.tail
+    return tag
 
-    def append(self, content):
-        pass
-
-def raw(content):
-    return Raw(content)
 
 DOCTYPE = "<!DOCTYPE html>"
 
