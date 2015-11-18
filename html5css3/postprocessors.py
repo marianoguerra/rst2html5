@@ -1,8 +1,12 @@
+from __future__ import absolute_import
 import os
+import sys
 
 import html5css3
-import html
 import json
+from . import html
+
+IS_PY3 = sys.version[0] == '3'
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -11,6 +15,13 @@ from docutils.parsers.rst import Directive
 BASE_PATH = os.path.dirname(__file__)
 
 join_path = os.path.join
+
+if IS_PY3:
+    def read_file(path):
+        open(path).read()
+else:
+    def read_file(path):
+        open(path).read().decode('utf-8')
 
 def as_list(val):
     """return a list with val if val is not already a list, val otherwise"""
@@ -23,7 +34,7 @@ def abspath(path):
     return join_path(BASE_PATH, path)
 
 def js_fullpath(path, embed=True):
-    content = open(path).read().decode('utf-8')
+    content = read_file(path) 
 
     if embed:
         return html.Script(content)
@@ -34,7 +45,7 @@ def js(path, embed=True):
     return js_fullpath(abspath(path), embed)
 
 def css(path, embed=True):
-    content = open(abspath(path)).read().decode('utf-8')
+    content = read_file(abspath(path))
 
     if embed:
         return html.Style(content, type="text/css")

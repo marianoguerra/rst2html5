@@ -60,9 +60,10 @@ class TagBase(Element):
         escape_attrs(self)
 
     def append(self, child):
+        children = list(self)
         if not isinstance(child, Element):
-            if self._children:
-                last_children = self._children[-1]
+            if children:
+                last_children = children[-1]
 
                 if last_children.tail is None:
                     last_children.tail = to_str(child)
@@ -74,7 +75,7 @@ class TagBase(Element):
             else:
                 self.text += to_str(child)
         else:
-            self._children.append(child)
+            Element.append(self, child)
 
     def __repr__(self):
         return ET.tostring(self, "utf-8", "html")
@@ -206,7 +207,7 @@ def create_tags(ctx):
 
     for (tag, info) in TAGS.items():
         class_name = tag.title()
-        quote, compact, self_closing, docs = info
+        quote_, compact, self_closing, docs = info
 
         def __init__(self, *childs, **attrs):
             TagBase.__init__(self, childs, attrs)
@@ -216,14 +217,13 @@ def create_tags(ctx):
             "__init__": __init__
         })
 
-        cls.QUOTE = quote
+        cls.QUOTE = quote_
         cls.COMPACT = compact
         cls.SELF_CLOSING = self_closing
 
         ctx[class_name] = cls
 
 create_tags(globals())
-
 
 def tag_from_element(el):
     """
