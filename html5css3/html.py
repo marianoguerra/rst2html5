@@ -36,7 +36,7 @@ def to_str(value):
     return unicode(value)
 
 def escape_attrs(node):
-    node.attrib = dict([(key.rstrip("_"), str(val))
+    node.attrib = dict([(key.rstrip("_"), unicode(val))
         for (key, val) in node.attrib.items()])
 
     for child in node:
