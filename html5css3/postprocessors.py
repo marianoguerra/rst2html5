@@ -222,7 +222,7 @@ def embed_images(tree, embed=True, params=None):
         else:
             continue
 
-        encoded = base64.b64encode(open(path).read())
+        encoded = base64.b64encode(open(path, 'rb').read()).decode('utf-8')
         content = "data:%s;base64,%s" % (content_type, encoded)
         image.set('src', content)
 
