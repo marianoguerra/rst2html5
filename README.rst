@@ -158,6 +158,18 @@ example of video directive
 * http://marianoguerra.github.com/rst2html5/output/videos.html
 
 
+test it
+-------
+We use `tox <https://tox.readthedocs.org>`_ to run our test suite. After installing *tox* you can execute the tests by running
+
+::
+    tox
+
+in the project's root directory.
+
+The test cases can be found in ``html5css3/tests.py``.
+
+
 want to contribute ?
 --------------------
 

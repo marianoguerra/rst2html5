@@ -4,3 +4,5 @@
 build
 dist
 rst2html5_tools.egg-info
+.tox
+.cache
