@@ -18,10 +18,10 @@ join_path = os.path.join
 
 if IS_PY3:
     def read_file(path):
-        open(path).read()
+        return open(path).read()
 else:
     def read_file(path):
-        open(path).read().decode('utf-8')
+        return open(path).read().decode('utf-8')
 
 def as_list(val):
     """return a list with val if val is not already a list, val otherwise"""
