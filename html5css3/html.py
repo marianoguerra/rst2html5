@@ -204,6 +204,7 @@ _TAGS = {
     "title": (True, False, False, "Defines the document title"),
     "tr": (True, False, False, "Defines a table row"),
     "track": (True, False, False, "Defines text tracks used in mediaplayers"),
+    "tt": (True, True, False, "Defines teletype text"),
     "ul": (True, False, False, "Defines an unordered list"),
     "var": (True, True, False, "Defines a variable"),
     "video": (True, False, False, "Defines a video or movie"),
@@ -284,9 +285,10 @@ def tag_from_element(el):
     corresponding subclass of ``TagBase``.
     """
     tag = el.tag
+    namespace = None
     if tag.startswith('{'):
         # Strip namespace of the form "{namespace}tag"
-        tag = tag.split('}')[1]
+        namespace,tag = tag[1:].split('}')
     try:
         cls = globals()[tag.title()]
         if not issubclass(cls, TagBase):
@@ -297,6 +299,8 @@ def tag_from_element(el):
     tag = cls(*children, **el.attrib)
     tag.text = el.text
     tag.tail = el.tail
+    if namespace:
+        tag.attrib['xmlns'] = namespace
     return tag
 
 

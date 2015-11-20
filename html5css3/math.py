@@ -65,8 +65,8 @@ class LaTeXMathHandler(SimpleMathHandler):
     """
     Math handler for raw LaTeX output.
     """
-    BLOCK_TAG = Div
-    INLINE_TAG = Span
+    BLOCK_TAG = Pre
+    INLINE_TAG = Tt
     CLASS = 'math'
     BLOCK_WRAPPER = '%(code)s'
     INLINE_WRAPPER = '%(code)s'
@@ -97,7 +97,16 @@ class MathMLMathHandler(MathHandler):
         # FIXME: Set doctype and content_type
         tree = parse_latex_math(code, inline=(not block))
         html = ''.join(tree.xml())
-        return html_to_tags(html)[0]
+        tag = html_to_tags(html)[0]
+
+        def strip_ns(tag):
+            del tag.attrib['xmlns']
+            for child in tag:
+                strip_ns(child)
+
+        for child in tag:
+            strip_ns(child)
+        return tag
 
 
 class HTMLMathHandler(MathHandler):

@@ -36,27 +36,33 @@ def remove_whitespace_lines(s):
     return re.sub(r'^([^\S\n]*\n)*', '', re.sub(r'(\n[^\S\n]*)*$', '', s))
 
 
-def rst2html(rst, only_body=True):
+def get_body(html):
+    """
+    Extract HTML code inside ``body`` tag.
+    """
+    start = html.index('<body>') + 6
+    stop = html.rindex('</body>')
+    return html[start:stop]
+
+
+def rst2html(rst, **kwargs):
     """
     Convert RST to HTML.
 
-    If ``only_body`` is true then only the HTML code between the opening
-    and closing ``body`` tag is returned.
+    Keyword arguments are passed on to the writer.
     """
+    settings = {'input_encoding': 'utf8'}
+    settings.update(kwargs)
     result = publish_string(
         source=rst,
         writer=Writer(),
         writer_name='html5css3',
-        settings_overrides={'input_encoding': 'utf8'},
+        settings_overrides=settings,
     ).decode('utf8')
-    if only_body:
-        start = result.index('<body>') + 6
-        stop = result.rindex('</body>')
-        result = result[start:stop]
     return result
 
 
-def assert_rst(rst, html, only_body=True, dedent=True):
+def assert_rst(rst, html, only_body=True, dedent=True, **kwargs):
     """
     Assert that RST is correctly converted to HTML.
 
@@ -73,12 +79,16 @@ def assert_rst(rst, html, only_body=True, dedent=True):
     are removed. The remaining lines are then dedented, i.e. common
     leading whitespace is stripped. This allows for more flexibility
     when formatting test source code.
+
+    Any remaining keyword arguments are passed on to the HTML writer.
     """
     __tracebackhide__ = True  # Hide this function in py.test tracebacks
     if dedent:
         rst = textwrap.dedent(remove_whitespace_lines(rst))
         html = textwrap.dedent(remove_whitespace_lines(html))
-    result = rst2html(rst, only_body)
+    result = rst2html(rst, **kwargs)
+    if only_body:
+        result = get_body(result)
     assert result == html
 
 
@@ -116,4 +126,110 @@ def test_non_ascii_chars_in_attributes():
         """, """
             <figure><img alt="ö" src="image.png"></figure>
         """)
+
+
+INLINE_MATH_RST = r':math:`\lambda^2 + \sum_{i=1}^n \frac{x}{y}`'
+
+BLOCK_MATH_RST = r"""
+.. math::
+
+    \lambda^2 + \sum_{i=1}^n \frac{x}{y}
+"""
+
+
+def test_math_html_inline():
+    """
+    Inline math to HTML conversion.
+    """
+    assert_rst(
+        INLINE_MATH_RST,
+        '<p><span class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span></p>',
+        math_output='html')
+
+
+def test_math_html_block():
+    """
+    Block math to HTML conversion.
+    """
+    assert_rst(
+        BLOCK_MATH_RST,
+        '<div class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div>',
+        math_output='html')
+
+
+def test_math_mathml_inline():
+    """
+    Inline math to MathML conversion.
+    """
+    assert_rst(
+        INLINE_MATH_RST, """
+        <p><math xmlns="http://www.w3.org/1998/Math/MathML">
+        <mrow><msup><mi>λ</mi><mn>2</mn></msup><mo>+</mo><munderover><mo>∑</mo>
+        <mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mfrac>
+        <mrow><mi>x</mi></mrow>
+        <mrow><mi>y</mi></mrow></mfrac></mrow></math></p>
+        """,
+        math_output='mathml')
+
+
+def test_math_mathml_block():
+    """
+    Block math to MathML conversion.
+    """
+    assert_rst(
+        BLOCK_MATH_RST,
+        """
+        <math mode="display" xmlns="http://www.w3.org/1998/Math/MathML">
+        <mtable>
+        <mtr>
+        <mtd><msup><mi>λ</mi><mn>2</mn></msup><mo>+</mo><munderover><mo>∑</mo>
+        <mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mfrac>
+        <mrow><mi>x</mi></mrow>
+        <mrow><mi>y</mi></mrow></mfrac></mtd></mtr></mtable></math>
+        """,
+        math_output='mathml')
+
+
+def test_math_latex_inline():
+    """
+    Inline math to LaTeX conversion.
+    """
+    assert_rst(
+        INLINE_MATH_RST,
+        r'<p><tt class="math">\lambda^2 + \sum_{i=1}^n \frac{x}{y}</tt></p>',
+        math_output='latex')
+
+
+def test_math_latex_block():
+    """
+    Block math to LaTeX conversion.
+    """
+    assert_rst(
+        BLOCK_MATH_RST,
+        r'<pre class="math">\lambda^2 + \sum_{i=1}^n \frac{x}{y}</pre>',
+        math_output='latex')
+
+
+def test_math_mathjax_inline():
+    """
+    Inline math to MathJax conversion.
+    """
+    assert_rst(
+        INLINE_MATH_RST,
+        r'<p><span class="math">\(\lambda^2 + \sum_{i=1}^n \frac{x}{y}\)</span></p>',
+        math_output='mathjax')
+
+
+def test_math_mathjax_block():
+    """
+    Block math to MathJax conversion.
+    """
+    assert_rst(
+        BLOCK_MATH_RST,
+        r"""
+        <div class="math">\begin{equation*}
+        \lambda^2 + \sum_{i=1}^n \frac{x}{y}
+        \end{equation*}</div>
+        """,
+        math_output='mathjax')
 
