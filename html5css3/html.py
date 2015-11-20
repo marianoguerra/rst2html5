@@ -89,7 +89,15 @@ class TagBase(Element):
 
 Comment = ET.Comment
 
-TAGS = {
+
+# List of HTML tags for dynamically creating tag classes.
+#
+# Keys are tag names, values are lists containing the values for
+# ``TagBase.QUOTE``, ``TagBase.COMPACT``, ``TagBase.SELF_CLOSING``, and
+# ``TagBase.__doc__``.
+#
+# See also ``create_tags``.
+_TAGS = {
     "a": (True, True, False, "Defines a hyperlink"),
     "abbr": (True, False, False, "Defines an abbreviation"),
     "address": (True, False, False, "Defines an address element"),
@@ -199,13 +207,55 @@ TAGS = {
     "ul": (True, False, False, "Defines an unordered list"),
     "var": (True, True, False, "Defines a variable"),
     "video": (True, False, False, "Defines a video or movie"),
-    "wbr": (True, False, False, "Defines a possible line-break")
+    "wbr": (True, False, False, "Defines a possible line-break"),
+
+    # MathML tags
+    "math": (True, False, False, "MathML top-level container"),
+    "maction": (True, False, False, "MathML Binded actions to sub-expressions"),
+    "maligngroup": (True, False, False, "MathML Alignment group"),
+    "malignmark": (True, False, False, "MathML Alignment points"),
+    "menclose": (True, False, False, "MathML Enclosed contents"),
+    "merror": (True, False, False, "MathML Enclosed syntax error messages"),
+    "mfenced": (True, False, False, "MathML Parentheses"),
+    "mfrac": (True, False, False, "MathML Fraction"),
+    "mglyph": (True, False, False, "MathML Displaying non-standard symbols"),
+    "mi": (True, False, False, "MathML Identifier"),
+    "mlabeledtr": (True, False, False, "MathML Labeled row in a table or a matrix"),
+    "mlongdiv": (True, False, False, "MathML Long division notation"),
+    "mmultiscripts": (True, False, False, "MathML Prescripts and tensor indices"),
+    "mn": (True, False, False, "MathML Number"),
+    "mo": (True, False, False, "MathML Operator"),
+    "mover": (True, False, False, "MathML Overscript"),
+    "mpadded": (True, False, False, "MathML Space around content"),
+    "mphantom": (True, False, False, "MathML Invisible content with reserved space"),
+    "mroot": (True, False, False, "MathML Radical with specified index"),
+    "mrow": (True, False, False, "MathML Grouped sub-expressions"),
+    "ms": (True, False, False, "MathML String literal"),
+    "mscarries": (True, False, False, "MathML Annotations such as carries"),
+    "mscarry": (True, False, False, "MathML Single carry"),
+    "msgroup": (True, False, False, "MathML Grouped rows"),
+    "msline": (True, False, False, "MathML Horizontal line"),
+    "mspace": (True, False, False, "MathML Space"),
+    "msqrt": (True, False, False, "MathML Square root without an index"),
+    "msrow": (True, False, False, "MathML Rows"),
+    "mstack": (True, False, False, "MathML Stacked alignment"),
+    "mstyle": (True, False, False, "MathML Style change"),
+    "msub": (True, False, False, "MathML Subscript"),
+    "msup": (True, False, False, "MathML Superscript"),
+    "msubsup": (True, False, False, "MathML Subscript-superscript pair"),
+    "mtable": (True, False, False, "MathML Table or matrix"),
+    "mtd": (True, False, False, "MathML Cell in a table or a matrix"),
+    "mtext": (True, False, False, "MathML Text"),
+    "mtr": (True, False, False, "MathML Row in a table or a matrix"),
+    "munder": (True, False, False, "MathML Underscript"),
+    "munderover": (True, False, False, "MathML Underscript-overscript pair"),
 }
 
-def create_tags(ctx):
+
+def _create_tags(ctx):
     "create all classes and put them in ctx"
 
-    for (tag, info) in TAGS.items():
+    for (tag, info) in _TAGS.items():
         class_name = tag.title()
         quote_, compact, self_closing, docs = info
 
@@ -223,7 +273,8 @@ def create_tags(ctx):
 
         ctx[class_name] = cls
 
-create_tags(globals())
+_create_tags(globals())
+
 
 def tag_from_element(el):
     """
@@ -232,17 +283,33 @@ def tag_from_element(el):
     ``el`` is an instance of ``Element``. Returns an instance of the
     corresponding subclass of ``TagBase``.
     """
+    tag = el.tag
+    if tag.startswith('{'):
+        # Strip namespace of the form "{namespace}tag"
+        tag = tag.split('}')[1]
     try:
-        cls = globals()[el.tag.title()]
+        cls = globals()[tag.title()]
         if not issubclass(cls, TagBase):
             raise KeyError()
     except KeyError:
-        raise ValueError("TagBase doesn't have a subclass for '%s'." % el.tag)
+        raise ValueError("TagBase doesn't have a subclass for '%s'." % tag)
     children = [tag_from_element(c) for c in el]
     tag = cls(*children, **el.attrib)
     tag.text = el.text
     tag.tail = el.tail
     return tag
+
+
+def html_to_tags(code):
+    """
+    Convert HTML code to tags.
+
+    ``code`` is a string containing HTML code. The return value is a
+    list of corresponding instances of ``TagBase``.
+    """
+    code = ('<div>' + code + '</div>').encode('utf8')
+    el = ET.fromstring(code)
+    return [tag_from_element(c) for c in el]
 
 
 DOCTYPE = "<!DOCTYPE html>"

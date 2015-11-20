@@ -27,12 +27,12 @@ except ImportError:
     Image = None
 
 from docutils import frontend, nodes, utils, writers, languages
-import xml.etree.ElementTree
 
 from . import html
 from .html import *
 # import default post processors so they register
 from . import postprocessors
+from .math import get_math_handler
 
 
 if IS_PY3:
@@ -329,12 +329,11 @@ def swallow_childs(node, translator):
     return Span(class_="remove-me")
 
 def raw(node, translator):
-    el = xml.etree.ElementTree.fromstring('<div>' + node.astext() + '</div>')
-    children = [html.tag_from_element(c) for c in el]
-    for child in children:
-        translator._append(child, node)
+    tags = html_to_tags(node.astext())
+    for tag in tags:
+        translator._append(tag, node)
     node.children[:] = []
-    return children[-1]
+    return tags[-1]
 
 
 NODES = {
@@ -404,8 +403,6 @@ NODES = {
     "line_block": None,
     "list_item": Li,
     "literal": Code, # inline literal markup use the <code> tag in HTML5. inline code uses <code class="code">
-    "math": None,
-    "math_block": None,
     "meta": Meta,
     "option": (P, "option"),
     "option_argument": Var,
@@ -470,6 +467,8 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.head = Head(
             Meta(charset=self.content_type),
             Title(self.title))
+
+        self.math_handler = get_math_handler(self.settings.math_output)
 
     def append_default_stylesheets(self):
         """ Appends the default styles defined on the translator settings. """
@@ -795,6 +794,16 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         tag.attrib.update(atts)
 
+        self._stack(tag, node)
+
+    def visit_math_block(self, node):
+        tag = self.math_handler.convert(self, node, True)
+        node.children[:] = []
+        self._stack(tag, node)
+
+    def visit_math(self, node):
+        tag = self.math_handler.convert(self, node, False)
+        node.children[:] = []
         self._stack(tag, node)
 
     def unknown_visit(self, node):
