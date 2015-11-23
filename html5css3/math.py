@@ -26,9 +26,13 @@ class MathHandler(object):
     INLINE_WRAPPER = '%(code)s'
 
     def __init__(self, options):
-        self.options = options
+        self._options = options
+        self._setup_done = False
 
     def convert(self, translator, node, block):
+        if not self._setup_done:
+            self._setup(translator)
+            self._setup_done = True
         code = node.astext()
         if block:
             env = pick_math_environment(code)
@@ -45,6 +49,9 @@ class MathHandler(object):
 
     def _create_tag(self, code, block):
         raise NotImplementedError('Must be implemented in subclass.')
+
+    def _setup(self, translator):
+        pass
 
 
 class SimpleMathHandler(MathHandler):
@@ -82,19 +89,33 @@ class MathJaxMathHandler(SimpleMathHandler):
     BLOCK_WRAPPER = '\\begin{%(env)s}\n%(code)s\n\\end{%(env)s}'
     INLINE_WRAPPER = '\(%(code)s\)'
 
-    # FIXME: Include MathJax JS + CSS
+    DEFAULT_URL = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js'
+    DEFAULT_CONFIG = """
+        MathJax.Hub.Config({
+            extensions: [],
+            jax: ["input/TeX", "output/HTML-CSS"],
+            tex2jax: {
+                inlineMath: [["\\\\(","\\\\)"]],
+                displayMath: [['$$','$$'], ["\\\\[","\\\\]"]],
+                processEscapes: true
+            },
+            "HTML-CSS": { availableFonts: ["TeX"] }
+        });"""
+
+    def _setup(self, translator):
+        translator.head.append(Script(self.DEFAULT_CONFIG,
+                               type="text/x-mathjax-config"))
+        translator.head.append(Script(src=self.DEFAULT_URL))
 
 
 class MathMLMathHandler(MathHandler):
     """
     Math handler for MathML output.
     """
-    CLASS = None
     BLOCK_WRAPPER = '%(code)s'
     INLINE_WRAPPER = '%(code)s'
 
     def _create_tag(self, code, block):
-        # FIXME: Set doctype and content_type
         tree = parse_latex_math(code, inline=(not block))
         html = ''.join(tree.xml())
         tag = html_to_tags(html)[0]
