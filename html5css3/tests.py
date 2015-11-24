@@ -253,10 +253,10 @@ def test_math_mathjax_inline():
     """
     Inline math to MathJax conversion.
     """
-    (RST(INLINE_MATH_RST,
+    (RST(INLINE_MATH_RST + ' ' + INLINE_MATH_RST,
          math_output='mathjax')
     .assert_body(
-        r'<p><span class="math">\(\lambda^2 + \sum_{i=1}^n \frac{x}{y}\)</span></p>',
+        r'<p><span class="math">\(\lambda^2 + \sum_{i=1}^n \frac{x}{y}\)</span> <span class="math">\(\lambda^2 + \sum_{i=1}^n \frac{x}{y}\)</span></p>',
     )
     .assert_contains(MATHJAX_JS_REF, 1)
     .assert_contains(MATHJAX_CONFIG, 1))
@@ -266,10 +266,12 @@ def test_math_mathjax_block():
     """
     Block math to MathJax conversion.
     """
-    (RST(BLOCK_MATH_RST,
+    (RST(BLOCK_MATH_RST + '\n\n' + BLOCK_MATH_RST,
          math_output='mathjax')
     .assert_body(r"""
         <div class="math">\begin{equation*}
+        \lambda^2 + \sum_{i=1}^n \frac{x}{y}
+        \end{equation*}</div><div class="math">\begin{equation*}
         \lambda^2 + \sum_{i=1}^n \frac{x}{y}
         \end{equation*}</div>
     """)
