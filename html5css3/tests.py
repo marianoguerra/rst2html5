@@ -17,13 +17,14 @@ run ``tox`` in the project's root directory (this requires tox_).
 
 from __future__ import unicode_literals
 
-import textwrap
+import os.path
 import re
+import textwrap
 
 from docutils.core import publish_string
 
 from . import Writer
-from .math import MathJaxMathHandler
+from .math import HTMLMathHandler, MathJaxMathHandler
 
 
 #
@@ -167,28 +168,33 @@ BLOCK_MATH_RST = r"""
     \lambda^2 + \sum_{i=1}^n \frac{x}{y}
 """
 
+MATH_CSS_FILE = os.path.relpath(HTMLMathHandler.DEFAULT_CSS)
+MATH_CSS_LINK = '<link href="%s" rel="stylesheet" type="text/css">' % MATH_CSS_FILE
 
 def test_math_html_inline():
     """
     Inline math to HTML conversion.
     """
-    (RST(INLINE_MATH_RST,
-         math_output='html')
+    (RST(INLINE_MATH_RST + ' ' + INLINE_MATH_RST,
+         math_output='html',
+         embed_content=False)
     .assert_body(
-        '<p><span class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span></p>'
-    ))
-
+        '<p><span class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span> <span class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span></p>'
+    )
+    .assert_contains(MATH_CSS_LINK, 1))
 
 
 def test_math_html_block():
     """
     Block math to HTML conversion.
     """
-    (RST(BLOCK_MATH_RST,
-         math_output='html')
+    (RST(BLOCK_MATH_RST + '\n\n' + BLOCK_MATH_RST,
+         math_output='html',
+         embed_content=False)
     .assert_body(
-        '<div class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div>',
-    ))
+        '<div class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div><div class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div>',
+    )
+    .assert_contains(MATH_CSS_LINK, 1))
 
 
 def test_math_mathml_inline():

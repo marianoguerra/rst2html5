@@ -10,6 +10,8 @@ Math handling for ``html5css3``.
 
 from __future__ import unicode_literals
 
+import os.path
+
 from docutils.utils.math.unichar2tex import uni2tex_table
 from docutils.utils.math import math2html, pick_math_environment
 from docutils.utils.math.latex2mathml import parse_latex_math
@@ -137,6 +139,7 @@ class HTMLMathHandler(MathHandler):
     CLASS = 'formula'
     BLOCK_WRAPPER = '\\begin{%(env)s}\n%(code)s\n\\end{%(env)s}'
     INLINE_WRAPPER = '$%(code)s$'
+    DEFAULT_CSS = os.path.join(os.path.dirname(__file__), 'math.css')
 
     def _create_tag(self, code, block):
         math2html.DocumentParameters.displaymode = block
@@ -146,6 +149,9 @@ class HTMLMathHandler(MathHandler):
             return Div(*tags)
         else:
             return Span(*tags)
+
+    def _setup(self, translator):
+        translator.css(os.path.relpath(self.DEFAULT_CSS))
 
 
 MATH_HANDLERS = {

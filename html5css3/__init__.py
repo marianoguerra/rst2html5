@@ -15,6 +15,7 @@ this code is based on html4css1
 from __future__ import absolute_import
 __docformat__ = 'reStructuredText'
 
+import codecs
 import os
 import re
 import json
@@ -471,18 +472,22 @@ class HTMLTranslator(nodes.NodeVisitor):
         self.math_handler = get_math_handler(self.settings.math_output)
 
     def append_default_stylesheets(self):
-        """ Appends the default styles defined on the translator settings. """
-        styles = utils.get_stylesheet_list(self.settings)
-
-        for style in styles:
-            self.head.append(self.css(style))
+        """
+        Appends the default styles defined on the translator settings.
+        """
+        for style in utils.get_stylesheet_list(self.settings):
+            self.css(style)
 
     def css(self, path):
+        """
+        Link/embed CSS file.
+        """
         if self.settings.embed_content:
-            content = open(path).read()
-            return Style(content, type="text/css")
+            content = codecs.open(path, 'r', encoding='utf8').read()
+            tag = Style(content, type="text/css")
         else:
-            return Link(href=path, rel="stylesheet", type_="text/css")
+            tag = Link(href=path, rel="stylesheet", type_="text/css")
+        self.head.append(tag)
 
     def js(self, path):
         content = open(path).read().decode('utf-8')
