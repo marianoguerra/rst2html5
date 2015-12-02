@@ -54,10 +54,6 @@ note that you will have to add the stylesheet for the code to actually highlight
 to embed images inside the html file to have a single .html file to distribute
 add the --embed-images option.
 
-to add `mathjax <http://mathjax.org>`_ support::
-
-    rst2html5 --mathjax examples/mathjax.rst mathjax.html
-
 post processors support optional parameters, they are passed with a command
 line option with the same name as the post processor appending "-opts" at the
 end, for example to change the revealjs theme you can do::
@@ -142,6 +138,38 @@ to print pass --reveal-js-opts printpdf=true, for example::
 
 this can be used to open with chrome or chromium and print as pdf as described here: https://github.com/hakimel/reveal.js#pdf-export
 
+
+Math Support
+------------
+Use the ``math`` role and directive to include inline math and block-level equations into your document::
+
+    When :math`a \ne 0`, there are two solutions to :math:`ax^2 + bx + c = 0`
+    and they are
+
+    .. math::
+
+       x = {-b \pm \sqrt{b^2-4ac} \over 2a}
+
+Both of these support a basic subset of LaTeX_ syntax.
+
+By default, MathJax_ is used for displaying math. You can choose a different output format using the ``--math-output`` command line option:
+
+  * ``--math-output mathjax`` uses MathJax (the default)
+  * ``--math-output html`` will use plain HTML + CSS
+  * ``--math-output mathml`` will use MathML_
+  * ``--math-output latex`` outputs raw LaTeX
+
+If you use MathJax, you can use the ``--mathjax-url`` and ``-mathjax-config`` command line options to configure a custom MathJax JavaScript URL and to provide a file with a custom MathJax configuration, respectively.
+
+If you use HTML + CSS output, you can use the ``--math-css`` command line option to configure a custom math stylesheet.
+
+Note that the old MathJax postprocessor (activated using ``--mathjax``) has been deprecated.
+
+.. _LaTeX: https://www.latex-project.org
+.. _MathJax: https://www.mathjax.org
+.. _MathML: https://en.wikipedia.org/wiki/MathML
+
+
 see it
 ------
 
@@ -160,12 +188,7 @@ example of video directive
 
 test it
 -------
-We use `tox <https://tox.readthedocs.org>`_ to run our test suite. After installing *tox* you can execute the tests by running
-
-::
-    tox
-
-in the project's root directory.
+We use `tox <https://tox.readthedocs.org>`_ to run our test suite. After installing *tox* you can execute the tests by running ``tox`` in the project's root directory.
 
 The test cases can be found in ``html5css3/tests.py``.
 
