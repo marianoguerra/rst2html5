@@ -17,8 +17,10 @@ run ``tox`` in the project's root directory (this requires tox_).
 
 from __future__ import unicode_literals
 
+import contextlib
 import os.path
 import re
+import tempfile
 import textwrap
 
 from docutils.core import publish_string
@@ -97,6 +99,13 @@ class RST(object):
             assert count == num
         return self
 
+    def print_html(self):
+        """
+        Print HTML to STDOUT for debugging.
+        """
+        print(self.html)
+        return self
+
 
 def rst2html(rst, **kwargs):
     """
@@ -122,6 +131,17 @@ def get_body(html):
     start = html.index('<body>') + 6
     stop = html.rindex('</body>')
     return html[start:stop]
+
+
+@contextlib.contextmanager
+def temp_file(content):
+    """
+    Context manager that supplies a temporary file with given content.
+    """
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(content)
+        f.seek(0)
+        yield f.name
 
 
 #
@@ -168,8 +188,13 @@ BLOCK_MATH_RST = r"""
     \lambda^2 + \sum_{i=1}^n \frac{x}{y}
 """
 
+
 MATH_CSS_FILE = os.path.relpath(HTMLMathHandler.DEFAULT_CSS)
-MATH_CSS_LINK = '<link href="%s" rel="stylesheet" type="text/css">' % MATH_CSS_FILE
+
+def _math_css_link(path=None):
+    path = path or MATH_CSS_FILE
+    return '<link href="%s" rel="stylesheet" type="text/css">' % path
+
 
 def test_math_html_inline():
     """
@@ -181,7 +206,7 @@ def test_math_html_inline():
     .assert_body(
         '<p><span class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span> <span class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span></p>'
     )
-    .assert_contains(MATH_CSS_LINK, 1))
+    .assert_contains(_math_css_link(), 1))
 
 
 def test_math_html_block():
@@ -194,7 +219,30 @@ def test_math_html_block():
     .assert_body(
         '<div class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div><div class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div>',
     )
-    .assert_contains(MATH_CSS_LINK, 1))
+    .assert_contains(_math_css_link(), 1))
+
+
+def test_math_html_config_math_opts():
+    """
+    HTML math configuration via "--math-opts".
+    """
+    (RST(INLINE_MATH_RST,
+         math_output='html ../my/math.css',
+         embed_content=False)
+     .print_html()
+     .assert_contains(_math_css_link('../my/math.css'), 1))
+
+
+def test_math_html_config_math_css():
+    """
+    HTML math configuration via "--math-css".
+    """
+    (RST(INLINE_MATH_RST,
+         math_output='html',
+         math_css='../my/math.css',
+         embed_content=False)
+     .print_html()
+     .assert_contains(_math_css_link('../my/math.css'), 1))
 
 
 def test_math_mathml_inline():
@@ -251,7 +299,10 @@ def test_math_latex_block():
     ))
 
 
-MATHJAX_JS_REF = '<script src="%s"></script>' % MathJaxMathHandler.DEFAULT_URL
+def _mathjax_js_ref(url=None):
+    url = url or MathJaxMathHandler.DEFAULT_URL
+    return '<script src="%s"></script>' % url
+
 MATHJAX_CONFIG = MathJaxMathHandler.DEFAULT_CONFIG
 
 
@@ -264,7 +315,7 @@ def test_math_mathjax_inline():
     .assert_body(
         r'<p><span class="math">\(\lambda^2 + \sum_{i=1}^n \frac{x}{y}\)</span> <span class="math">\(\lambda^2 + \sum_{i=1}^n \frac{x}{y}\)</span></p>',
     )
-    .assert_contains(MATHJAX_JS_REF, 1)
+    .assert_contains(_mathjax_js_ref(), 1)
     .assert_contains(MATHJAX_CONFIG, 1))
 
 
@@ -281,6 +332,56 @@ def test_math_mathjax_block():
         \lambda^2 + \sum_{i=1}^n \frac{x}{y}
         \end{equation*}</div>
     """)
-    .assert_contains(MATHJAX_JS_REF, 1)
+    .assert_contains(_mathjax_js_ref(), 1)
     .assert_contains(MATHJAX_CONFIG, 1))
+
+
+def test_math_mathjax_config_math_opts():
+    """
+    MathJax configuration via additional option to "--math-opts".
+    """
+    (RST(INLINE_MATH_RST,
+         math_output='mathjax http://my/mathjax.js')
+     .assert_contains(_mathjax_js_ref('http://my/mathjax.js')))
+
+
+def test_math_mathjax_config_mathjax_opts():
+    """
+    MathJax configuration via "--mathjax-opts".
+    """
+    (RST(INLINE_MATH_RST,
+         math_output='mathjax',
+         mathjax_opts='url=http://my/mathjax.js')
+     .assert_contains(_mathjax_js_ref('http://my/mathjax.js')))
+    with temp_file('my_config') as filename:
+        (RST(INLINE_MATH_RST,
+             math_output='mathjax',
+             mathjax_opts='config=' + filename)
+         .assert_contains('my_config'))
+        (RST(INLINE_MATH_RST,
+             math_output='mathjax',
+             mathjax_opts='url=http://my/mathjax.js,config=' + filename)
+         .assert_contains(_mathjax_js_ref('http://my/mathjax.js'))
+         .assert_contains('my_config'))
+
+
+def test_math_mathjax_config_mathjax_url():
+    """
+    MathJax configuration via "--mathjax-url".
+    """
+    (RST(INLINE_MATH_RST,
+         math_output='mathjax',
+         mathjax_url='http://my/mathjax.js')
+     .assert_contains(_mathjax_js_ref('http://my/mathjax.js')))
+
+
+def test_math_mathjax_config_mathjax_config():
+    """
+    MathJax configuration via "--mathjax-config".
+    """
+    with temp_file('my_config') as filename:
+        (RST(INLINE_MATH_RST,
+             math_output='mathjax',
+             mathjax_config=filename)
+         .assert_contains('my_config'))
 

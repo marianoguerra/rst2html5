@@ -33,7 +33,8 @@ from . import html
 from .html import *
 # import default post processors so they register
 from . import postprocessors
-from .math import get_math_handler
+from .math import (HTMLMathHandler, LaTeXMathHandler, MathJaxMathHandler,
+                   MathMLMathHandler)
 
 
 if IS_PY3:
@@ -149,9 +150,18 @@ class Writer(writers.Writer):
           ['--table-style'],
           {'default': ''}),
          ('Math output format, one of "MathML", "HTML", "MathJax" '
-          'or "LaTeX". Default: "HTML math.css"',
+          'or "LaTeX". Default: "MathJax"',
           ['--math-output'],
-          {'default': 'HTML math.css'}),
+          {'default': 'MathJax'}),
+         ('MathJax JS URL.',
+          ['--mathjax-url'],
+          {'default': None}),
+         ('Filename of a custom MathJax configuration script.',
+          ['--mathjax-config'],
+          {'default': None}),
+         ('Path to custom math CSS file.',
+          ['--math-css'],
+          {'default': None}),
          ('Omit the XML declaration.  Use with caution.',
           ['--no-xml-declaration'],
           {'dest': 'xml_declaration', 'default': 1, 'action': 'store_false',
@@ -469,7 +479,53 @@ class HTMLTranslator(nodes.NodeVisitor):
             Meta(charset=self.content_type),
             Title(self.title))
 
-        self.math_handler = get_math_handler(self.settings.math_output)
+        self._init_math_handler()
+
+
+    def _init_math_handler(self):
+        """
+        Parse math configuration and set up math handler.
+        """
+        fields = self.settings.math_output.split(None, 1)
+        name = fields[0].lower()
+        option = fields[1] if len(fields) > 1 else None
+        if name == 'html':
+            option = self.settings.math_css or option
+            self.math_handler = HTMLMathHandler(css_filename=option)
+        elif name == 'mathml':
+            if option:
+                raise ValueError(('Math handler "%s" does not support ' +
+                                 'option "%s".') % (name, option))
+            self.math_handler = MathMLMathHandler()
+        elif name == 'mathjax':
+            # The MathJax handler can be configured via different ways:
+            #
+            # - By passing an additional JS url to "--math-output"
+            #   (to stay backwards-compatible with docutils)
+            #
+            # - By using "--mathjax-opts" (to stay backwards compatible
+            #   with the previous html5css3 mathjax postprocessor)
+            #
+            # - By using "--mathjax-url" and "--mathjax-config" (the
+            #   preferred way)
+            js_url = option
+            config = None
+            if self.settings.mathjax_opts:
+                parts = self.settings.mathjax_opts.split(',')
+                options = dict(part.split('=', 1) for part in parts)
+                js_url = options.get('url', js_url)
+                config = options.get('config', config)
+            js_url = self.settings.mathjax_url or js_url
+            config = self.settings.mathjax_config or config
+            self.math_handler = MathJaxMathHandler(js_url=js_url,
+                                                   config_filename=config)
+        elif name == 'latex':
+            if option:
+                raise ValueError(('Math handler "%s" does not support ' +
+                                 'option "%s".') % (name, option))
+            self.math_handler = LaTeXMathHandler()
+        else:
+            raise ValueError('Unknown math handler "%s".' % name)
 
     def append_default_stylesheets(self):
         """

@@ -10,6 +10,7 @@ Math handling for ``html5css3``.
 
 from __future__ import unicode_literals
 
+import codecs
 import os.path
 
 from docutils.utils.math.unichar2tex import uni2tex_table
@@ -17,6 +18,10 @@ from docutils.utils.math import math2html, pick_math_environment
 from docutils.utils.math.latex2mathml import parse_latex_math
 
 from .html import *
+
+
+__all__ = ['HTMLMathHandler', 'LateXMathHandler', 'MathHandler',
+           'MathJaxMathHandler', 'MathMLMathHandler', 'SimpleMathHandler']
 
 
 class MathHandler(object):
@@ -27,8 +32,7 @@ class MathHandler(object):
     BLOCK_WRAPPER = '%(code)s'
     INLINE_WRAPPER = '%(code)s'
 
-    def __init__(self, options):
-        self._options = options
+    def __init__(self):
         self._setup_done = False
 
     def convert(self, translator, node, block):
@@ -104,10 +108,19 @@ class MathJaxMathHandler(SimpleMathHandler):
             "HTML-CSS": { availableFonts: ["TeX"] }
         });"""
 
+    def __init__(self, js_url=None, config_filename=None):
+        super(MathJaxMathHandler, self).__init__()
+        self.js_url = js_url or self.DEFAULT_URL
+        if config_filename:
+            with codecs.open(config_filename, 'r', encoding='utf8') as f:
+                self.config = f.read()
+        else:
+            self.config = self.DEFAULT_CONFIG
+
     def _setup(self, translator):
-        translator.head.append(Script(self.DEFAULT_CONFIG,
+        translator.head.append(Script(self.config,
                                type="text/x-mathjax-config"))
-        translator.head.append(Script(src=self.DEFAULT_URL))
+        translator.head.append(Script(src=self.js_url))
 
 
 class MathMLMathHandler(MathHandler):
@@ -141,6 +154,10 @@ class HTMLMathHandler(MathHandler):
     INLINE_WRAPPER = '$%(code)s$'
     DEFAULT_CSS = os.path.join(os.path.dirname(__file__), 'math.css')
 
+    def __init__(self, css_filename=None):
+        super(HTMLMathHandler, self).__init__()
+        self.css_filename = css_filename or self.DEFAULT_CSS
+
     def _create_tag(self, code, block):
         math2html.DocumentParameters.displaymode = block
         html = math2html.math2html(code)
@@ -151,36 +168,6 @@ class HTMLMathHandler(MathHandler):
             return Span(*tags)
 
     def _setup(self, translator):
-        translator.css(os.path.relpath(self.DEFAULT_CSS))
+        translator.css(os.path.relpath(self.css_filename))
 
-
-MATH_HANDLERS = {
-    'latex': LaTeXMathHandler,
-    'mathjax': MathJaxMathHandler,
-    'mathml': MathMLMathHandler,
-    'html': HTMLMathHandler,
-}
-
-
-def get_math_handler(math_output):
-    """
-    Get math handler by name.
-
-    ``math_output`` is the docutils configuration variable of the same
-    name. It specifies the name the math handler to use. The name may be
-    followed by additional options, separated from the name by a space.
-
-    The return value is an instance of ``MathHandler``.
-    """
-    fields = math_output.split(None, 1)
-    if len(fields) == 1:
-        name = math_output
-        options = ''
-    else:
-        name, options = fields
-    try:
-        cls = MATH_HANDLERS[name.lower()]
-    except KeyError:
-        raise ValueError('Math handler "%s" does not exist.' % name)
-    return cls(options)
 
