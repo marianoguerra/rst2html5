@@ -98,7 +98,7 @@ class MathJaxMathHandler(SimpleMathHandler):
     DEFAULT_URL = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js'
     DEFAULT_CONFIG = """
         MathJax.Hub.Config({
-            extensions: [],
+            extensions: ["tex2jax.js"],
             jax: ["input/TeX", "output/HTML-CSS"],
             tex2jax: {
                 inlineMath: [["\\\\(","\\\\)"]],
