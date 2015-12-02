@@ -154,10 +154,10 @@ Both of these support a basic subset of LaTeX_ syntax.
 
 By default, MathJax_ is used for displaying math. You can choose a different output format using the ``--math-output`` command line option:
 
-  * ``--math-output mathjax`` uses MathJax (the default)
-  * ``--math-output html`` will use plain HTML + CSS
-  * ``--math-output mathml`` will use MathML_
-  * ``--math-output latex`` outputs raw LaTeX
+* ``--math-output mathjax`` uses MathJax (the default)
+* ``--math-output html`` will use plain HTML + CSS
+* ``--math-output mathml`` will use MathML_
+* ``--math-output latex`` outputs raw LaTeX
 
 If you use MathJax, you can use the ``--mathjax-url`` and ``-mathjax-config`` command line options to configure a custom MathJax JavaScript URL and to provide a file with a custom MathJax configuration, respectively.
 
