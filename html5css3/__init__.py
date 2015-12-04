@@ -15,6 +15,7 @@ this code is based on html4css1
 from __future__ import absolute_import
 __docformat__ = 'reStructuredText'
 
+import codecs
 import os
 import re
 import json
@@ -27,12 +28,13 @@ except ImportError:
     Image = None
 
 from docutils import frontend, nodes, utils, writers, languages
-import xml.etree.ElementTree
 
 from . import html
 from .html import *
 # import default post processors so they register
 from . import postprocessors
+from .math import (HTMLMathHandler, LaTeXMathHandler, MathJaxMathHandler,
+                   MathMLMathHandler)
 
 
 if IS_PY3:
@@ -148,9 +150,18 @@ class Writer(writers.Writer):
           ['--table-style'],
           {'default': ''}),
          ('Math output format, one of "MathML", "HTML", "MathJax" '
-          'or "LaTeX". Default: "HTML math.css"',
+          'or "LaTeX". Default: "MathJax"',
           ['--math-output'],
-          {'default': 'HTML math.css'}),
+          {'default': 'MathJax'}),
+         ('MathJax JS URL.',
+          ['--mathjax-url'],
+          {'default': None}),
+         ('Filename of a custom MathJax configuration script.',
+          ['--mathjax-config'],
+          {'default': None}),
+         ('Path to custom math CSS file.',
+          ['--math-css'],
+          {'default': None}),
          ('Omit the XML declaration.  Use with caution.',
           ['--no-xml-declaration'],
           {'dest': 'xml_declaration', 'default': 1, 'action': 'store_false',
@@ -329,12 +340,11 @@ def swallow_childs(node, translator):
     return Span(class_="remove-me")
 
 def raw(node, translator):
-    el = xml.etree.ElementTree.fromstring('<div>' + node.astext() + '</div>')
-    children = [html.tag_from_element(c) for c in el]
-    for child in children:
-        translator._append(child, node)
+    tags = html_to_tags(node.astext())
+    for tag in tags:
+        translator._append(tag, node)
     node.children[:] = []
-    return children[-1]
+    return tags[-1]
 
 
 NODES = {
@@ -404,8 +414,6 @@ NODES = {
     "line_block": None,
     "list_item": Li,
     "literal": Code, # inline literal markup use the <code> tag in HTML5. inline code uses <code class="code">
-    "math": None,
-    "math_block": None,
     "meta": Meta,
     "option": (P, "option"),
     "option_argument": Var,
@@ -471,19 +479,71 @@ class HTMLTranslator(nodes.NodeVisitor):
             Meta(charset=self.content_type),
             Title(self.title))
 
-    def append_default_stylesheets(self):
-        """ Appends the default styles defined on the translator settings. """
-        styles = utils.get_stylesheet_list(self.settings)
+        self._init_math_handler()
 
-        for style in styles:
-            self.head.append(self.css(style))
+
+    def _init_math_handler(self):
+        """
+        Parse math configuration and set up math handler.
+        """
+        fields = self.settings.math_output.split(None, 1)
+        name = fields[0].lower()
+        option = fields[1] if len(fields) > 1 else None
+        if name == 'html':
+            option = self.settings.math_css or option
+            self.math_handler = HTMLMathHandler(css_filename=option)
+        elif name == 'mathml':
+            if option:
+                raise ValueError(('Math handler "%s" does not support ' +
+                                 'option "%s".') % (name, option))
+            self.math_handler = MathMLMathHandler()
+        elif name == 'mathjax':
+            # The MathJax handler can be configured via different ways:
+            #
+            # - By passing an additional JS url to "--math-output"
+            #   (to stay backwards-compatible with docutils)
+            #
+            # - By using "--mathjax-opts" (to stay backwards compatible
+            #   with the previous html5css3 mathjax postprocessor)
+            #
+            # - By using "--mathjax-url" and "--mathjax-config" (the
+            #   preferred way)
+            js_url = option
+            config = None
+            if self.settings.mathjax_opts:
+                parts = self.settings.mathjax_opts.split(',')
+                options = dict(part.split('=', 1) for part in parts)
+                js_url = options.get('url', js_url)
+                config = options.get('config', config)
+            js_url = self.settings.mathjax_url or js_url
+            config = self.settings.mathjax_config or config
+            self.math_handler = MathJaxMathHandler(js_url=js_url,
+                                                   config_filename=config)
+        elif name == 'latex':
+            if option:
+                raise ValueError(('Math handler "%s" does not support ' +
+                                 'option "%s".') % (name, option))
+            self.math_handler = LaTeXMathHandler()
+        else:
+            raise ValueError('Unknown math handler "%s".' % name)
+
+    def append_default_stylesheets(self):
+        """
+        Appends the default styles defined on the translator settings.
+        """
+        for style in utils.get_stylesheet_list(self.settings):
+            self.css(style)
 
     def css(self, path):
+        """
+        Link/embed CSS file.
+        """
         if self.settings.embed_content:
-            content = open(path).read()
-            return Style(content, type="text/css")
+            content = codecs.open(path, 'r', encoding='utf8').read()
+            tag = Style(content, type="text/css")
         else:
-            return Link(href=path, rel="stylesheet", type_="text/css")
+            tag = Link(href=path, rel="stylesheet", type_="text/css")
+        self.head.append(tag)
 
     def js(self, path):
         content = open(path).read().decode('utf-8')
@@ -795,6 +855,16 @@ class HTMLTranslator(nodes.NodeVisitor):
 
         tag.attrib.update(atts)
 
+        self._stack(tag, node)
+
+    def visit_math_block(self, node):
+        tag = self.math_handler.convert(self, node, True)
+        node.children[:] = []
+        self._stack(tag, node)
+
+    def visit_math(self, node):
+        tag = self.math_handler.convert(self, node, False)
+        node.children[:] = []
         self._stack(tag, node)
 
     def unknown_visit(self, node):
