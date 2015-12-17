@@ -139,7 +139,7 @@ def temp_file(content):
     Context manager that supplies a temporary file with given content.
     """
     with tempfile.NamedTemporaryFile() as f:
-        f.write(content)
+        f.write(content.encode('utf8'))
         f.seek(0)
         yield f.name
 
@@ -180,12 +180,12 @@ def test_non_ascii_chars_in_attributes():
     """)
 
 
-INLINE_MATH_RST = r':math:`\lambda^2 + \sum_{i=1}^n \frac{x}{y}`'
+INLINE_MATH_RST = r':math:`\lambda^2 < \sum_{i=1}^n \frac{x}{y}`'
 
 BLOCK_MATH_RST = r"""
 .. math::
 
-    \lambda^2 + \sum_{i=1}^n \frac{x}{y}
+    \lambda^2 < \sum_{i=1}^n \frac{x}{y}
 """
 
 
@@ -204,7 +204,7 @@ def test_math_html_inline():
          math_output='html',
          embed_content=False)
     .assert_body(
-        '<p><span class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span> <span class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span></p>'
+        '<p><span class="formula"><i>λ</i><sup>2</sup> &lt; <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span> <span class="formula"><i>λ</i><sup>2</sup> &lt; <span class="limits"><span class="limit"><span class="symbol">∑</span></span></span><span class="scripts"><sup class="script"><i>n</i></sup><sub class="script"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></span></p>'
     )
     .assert_contains(_math_css_link(), 1))
 
@@ -217,7 +217,7 @@ def test_math_html_block():
          math_output='html',
          embed_content=False)
     .assert_body(
-        '<div class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div><div class="formula"><i>λ</i><sup>2</sup> + <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div>',
+        '<div class="formula"><i>λ</i><sup>2</sup> &lt; <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div><div class="formula"><i>λ</i><sup>2</sup> &lt; <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><span class="fraction"><span class="ignored">(</span><span class="numerator"><i>x</i></span><span class="ignored">)/(</span><span class="denominator"><i>y</i></span><span class="ignored">)</span></span></div>',
     )
     .assert_contains(_math_css_link(), 1))
 
@@ -253,7 +253,7 @@ def test_math_mathml_inline():
          math_output='mathml')
     .assert_body("""
         <p><math xmlns="http://www.w3.org/1998/Math/MathML">
-        <mrow><msup><mi>λ</mi><mn>2</mn></msup><mo>+</mo><munderover><mo>∑</mo>
+        <mrow><msup><mi>λ</mi><mn>2</mn></msup><mo>&lt;</mo><munderover><mo>∑</mo>
         <mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mfrac>
         <mrow><mi>x</mi></mrow>
         <mrow><mi>y</mi></mrow></mfrac></mrow></math></p>
@@ -270,7 +270,7 @@ def test_math_mathml_block():
         <math mode="display" xmlns="http://www.w3.org/1998/Math/MathML">
         <mtable>
         <mtr>
-        <mtd><msup><mi>λ</mi><mn>2</mn></msup><mo>+</mo><munderover><mo>∑</mo>
+        <mtd><msup><mi>λ</mi><mn>2</mn></msup><mo>&lt;</mo><munderover><mo>∑</mo>
         <mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mfrac>
         <mrow><mi>x</mi></mrow>
         <mrow><mi>y</mi></mrow></mfrac></mtd></mtr></mtable></math>
@@ -284,7 +284,7 @@ def test_math_latex_inline():
     (RST(INLINE_MATH_RST,
          math_output='latex')
     .assert_body(
-        r'<p><tt class="math">\lambda^2 + \sum_{i=1}^n \frac{x}{y}</tt></p>',
+        r'<p><tt class="math">\lambda^2 &lt; \sum_{i=1}^n \frac{x}{y}</tt></p>',
     ))
 
 
@@ -295,7 +295,7 @@ def test_math_latex_block():
     (RST(BLOCK_MATH_RST,
         math_output='latex')
     .assert_body(
-        r'<pre class="math">\lambda^2 + \sum_{i=1}^n \frac{x}{y}</pre>',
+        r'<pre class="math">\lambda^2 &lt; \sum_{i=1}^n \frac{x}{y}</pre>',
     ))
 
 
@@ -313,7 +313,7 @@ def test_math_mathjax_inline():
     (RST(INLINE_MATH_RST + ' ' + INLINE_MATH_RST,
          math_output='mathjax')
     .assert_body(
-        r'<p><span class="math">\(\lambda^2 + \sum_{i=1}^n \frac{x}{y}\)</span> <span class="math">\(\lambda^2 + \sum_{i=1}^n \frac{x}{y}\)</span></p>',
+        r'<p><span class="math">\(\lambda^2 &lt; \sum_{i=1}^n \frac{x}{y}\)</span> <span class="math">\(\lambda^2 &lt; \sum_{i=1}^n \frac{x}{y}\)</span></p>',
     )
     .assert_contains(_mathjax_js_ref(), 1)
     .assert_contains(MATHJAX_CONFIG, 1))
@@ -327,9 +327,9 @@ def test_math_mathjax_block():
          math_output='mathjax')
     .assert_body(r"""
         <div class="math">\begin{equation*}
-        \lambda^2 + \sum_{i=1}^n \frac{x}{y}
+        \lambda^2 &lt; \sum_{i=1}^n \frac{x}{y}
         \end{equation*}</div><div class="math">\begin{equation*}
-        \lambda^2 + \sum_{i=1}^n \frac{x}{y}
+        \lambda^2 &lt; \sum_{i=1}^n \frac{x}{y}
         \end{equation*}</div>
     """)
     .assert_contains(_mathjax_js_ref(), 1)

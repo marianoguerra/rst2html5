@@ -46,7 +46,7 @@ class MathHandler(object):
         else:
             env = ''
             wrapper = self.INLINE_WRAPPER
-        code = quote(code).translate(uni2tex_table)
+        code = code.translate(uni2tex_table)
         code = wrapper % {'code': code, 'env': env}
         tag = self._create_tag(code, block)
         if self.CLASS:
