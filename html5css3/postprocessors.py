@@ -131,7 +131,7 @@ def revealjs(tree, embed=True, params=None):
     head = tree[0]
     body = tree[1]
     params = params or {}
-    theme_name = params.pop("theme", "default") + ".css"
+    theme_name = params.pop("theme", "league") + ".css"
     theme_base_dir = params.pop("themepath", None)
     printpdf = params.pop("printpdf", False)
 
@@ -161,9 +161,9 @@ def revealjs(tree, embed=True, params=None):
         head.append(css(path("css", "print", "pdf.css"), embed))
 
     # <script src="lib/js/head.min.js"></script>
-    # <script src="js/reveal.min.js"></script>
+    # <script src="js/reveal.js"></script>
     body.append(js(path("lib", "js", "head.min.js"), embed))
-    body.append(js(path("js", "reveal.min.js"), embed))
+    body.append(js(path("js", "reveal.js"), embed))
 
     head.append(css("rst2html5-reveal.css", embed))
 
