@@ -100,7 +100,6 @@ def deckjs(tree, embed=True, params=None):
     head.append(css(path("extensions", "menu", "deck.menu.css"), embed))
     head.append(css(path("extensions", "navigation", "deck.navigation.css"), embed))
     head.append(css(path("extensions", "status", "deck.status.css"), embed))
-    head.append(css(path("extensions", "hash", "deck.hash.css"), embed))
 
     # Theme CSS files (menu swaps these out)
     head.append(css(path("themes", "style", "web-2.0.css"), embed))
