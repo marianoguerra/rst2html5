@@ -110,7 +110,6 @@ def deckjs(tree, embed=True, params=None):
 
     # Deck Core and extensions
     body.append(js(path("core", "deck.core.js"), embed))
-    body.append(js(path("extensions", "hash", "deck.hash.js"), embed))
     body.append(js(path("extensions", "menu", "deck.menu.js"), embed))
     body.append(js(path("extensions", "goto", "deck.goto.js"), embed))
     body.append(js(path("extensions", "status", "deck.status.js"), embed))
