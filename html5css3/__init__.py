@@ -176,6 +176,13 @@ class Writer(writers.Writer):
           ['--embed-content'],
           {'default': 1, 'action': 'store_true',
            'validator': frontend.validate_boolean}),
+          ('Emit Body only',
+                  ['--emit-body'],
+                  {
+                      'default': 0,
+                      'action': 'store_true',
+                      'validator': frontend.validate_boolean
+                  }),
          ('Add a favicon to the generated page',
           ['--favicon'],
           {'default': None}),])
@@ -253,8 +260,11 @@ class Writer(writers.Writer):
         # we call it after the postprocessors to make sure it haves precedence
         visitor.append_default_stylesheets()
 
-        self.output = DOCTYPE
-        self.output += str(tree)
+        if settings.emit_body:
+            self.output = "\n".join([str(child) for child in tree[1]])
+        else:
+            self.output = DOCTYPE
+            self.output += str(tree)
 
 for (key, data) in postprocessors.PROCESSORS.items():
     Writer.add_postprocessor(data["name"], key, data["processor"])
