@@ -191,7 +191,7 @@ class Writer(writers.Writer):
         'output_encoding_error_handler': 'xmlcharrefreplace'
     }
 
-    post_processors = {}
+    post_processors = []
 
     def __init__(self):
         writers.Writer.__init__(self)
@@ -213,7 +213,7 @@ class Writer(writers.Writer):
         cls.settings_spec[2].append(("set " + name + " params",
             [opt_switch_params], {'dest': opt_params_name}))
 
-        cls.post_processors[opt_name] = processor
+        cls.post_processors.append((opt_name, processor))
 
     def translate(self):
         visitor = self.translator_class(self.document)
@@ -227,7 +227,7 @@ class Writer(writers.Writer):
         if favicon_path:
             tree[0].append(Link(href=favicon_path, rel="shortcut icon"))
 
-        for (key, processor) in Writer.post_processors.items():
+        for (key, processor) in Writer.post_processors:
             if getattr(settings, key):
 
                 params_str = getattr(settings, key + "_opts") or ""
@@ -266,7 +266,7 @@ class Writer(writers.Writer):
             self.output = DOCTYPE
             self.output += str(tree)
 
-for (key, data) in postprocessors.PROCESSORS.items():
+for (key, data) in postprocessors.PROCESSORS:
     Writer.add_postprocessor(data["name"], key, data["processor"])
 
 
