@@ -283,48 +283,48 @@ def mathjax(tree, embed=True, params=None):
     body.append(html.Script(src=url))
 
 
-PROCESSORS = {
-    "mathjax": {
+PROCESSORS = [
+    ("mathjax", {
         "name": "add mathjax support",
         "processor": mathjax
-    },
-    "jquery": {
+    }),
+    ("jquery", {
         "name": "add jquery",
         "processor": jquery
-    },
-    "pretty_print_code": {
+    }),
+    ("pretty_print_code", {
         "name": "pretty print code",
         "processor": pretty_print_code
-    },
-    "pygments": {
+    }),
+    ("pygments", {
         "name": "pygments",
         "processor": pygmentize
-    },
-    "deck_js": {
+    }),
+    ("deck_js", {
         "name": "deck.js",
         "processor": deckjs
-    },
-    "reveal_js": {
+    }),
+    ("reveal_js", {
         "name": "reveal.js",
         "processor": revealjs
-    },
-    "impress_js": {
+    }),
+    ("impress_js", {
         "name": "impress.js",
         "processor": impressjs
-    },
-    "bootstrap_css": {
+    }),
+    ("bootstrap_css", {
         "name": "bootstrap css",
         "processor": bootstrap_css
-    },
-    "embed_images": {
+    }),
+    ("embed_images", {
         "name": "embed images",
         "processor": embed_images
-    },
-    "add_js": {
+    }),
+    ("add_js", {
         "name": "add js files",
         "processor": add_js
-    }
-}
+    })
+]
 
 class Code(Directive):
     required_arguments = 1
