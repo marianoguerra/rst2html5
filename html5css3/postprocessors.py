@@ -126,6 +126,8 @@ def add_js(tree, embed=True, params=None):
         body.append(js_fullpath(path, embed))
 
 def revealjs(tree, embed=True, params=None):
+    import json
+
     head = tree[0]
     body = tree[1]
     params = params or {}
@@ -157,6 +159,22 @@ def revealjs(tree, embed=True, params=None):
 
     if printpdf:
         head.append(css(path("css", "print", "pdf.css"), embed))
+    else:
+        # Embed print-pdf URL semantics
+        css_print = read_file(abspath(path("css", "print", "pdf.css")))
+        # Escape for HTML page
+        css_print = json.dumps(css_print)
+        script = html.Script(r"""
+                (function() {{
+                    if (window.location.search.match( /print-pdf/gi )) {{
+                        var printStyle = document.createElement( 'style' );
+                        printStyle.type = 'text/css';
+                        printStyle.innerHTML = {};
+                        document.getElementsByTagName( 'head' )[0].appendChild( printStyle );
+                    }}
+                }})();
+                """.format(css_print))
+        head.append(script)
 
     # <script src="lib/js/head.min.js"></script>
     # <script src="js/reveal.js"></script>
