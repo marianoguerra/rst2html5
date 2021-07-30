@@ -1,5 +1,0 @@
-include README.rst
-recursive-include . *.py
-include html5css3/rst2html5.css
-include html5css3/rst2html5-reveal.css
-recursive-include html5css3/thirdparty *
