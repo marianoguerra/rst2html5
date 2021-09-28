@@ -175,15 +175,15 @@ see it
 
 you can see the examples from the above commands here:
 
-* http://marianoguerra.github.com/rst2html5/output/clean.html
-* http://marianoguerra.github.com/rst2html5/output/reveal.html
-* http://marianoguerra.github.com/rst2html5/output/deck.html
-* http://marianoguerra.github.com/rst2html5/output/impress.html
-* http://marianoguerra.github.com/rst2html5/output/bootstrap.html
+* http://marianoguerra.github.io/rst2html5/output/clean.html
+* http://marianoguerra.github.io/rst2html5/output/reveal.html
+* http://marianoguerra.github.io/rst2html5/output/deck.html
+* http://marianoguerra.github.io/rst2html5/output/impress.html
+* http://marianoguerra.github.io/rst2html5/output/bootstrap.html
 
 example of video directive
 
-* http://marianoguerra.github.com/rst2html5/output/videos.html
+* http://marianoguerra.github.io/rst2html5/output/videos.html
 
 
 test it
